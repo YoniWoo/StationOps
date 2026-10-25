@@ -1,0 +1,12 @@
+target/
+
+.idea/
+*.iml
+.run/
+.env
+.env.*
+!.env.example
+application-local.properties
+application-local.yml
+application-local.yaml
+.DS_Store
