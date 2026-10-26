@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StationOps — Supervision</title>
+</head>
+<body>
+<header th:replace="~{fragments/entete
+            :: entete(${utilisateurConnecte})}"></header>
+
+<main>
+  <h1>Supervision du réseau</h1>
+  <p>Le tableau de bord des incidents sera ajouté ici.</p>
+  <a th:href="@{/}">Retour à l’accueil</a>
+</main>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StationOps — Accueil</title>
+</head>
+<body>
+<header th:replace="~{fragments/entete
+            :: entete(${utilisateurConnecte})}"></header>
+
+<main>
+  <h1>Bienvenue sur StationOps</h1>
+  <p>Supervision des équipements et suivi des incidents.</p>
+  <a th:if="${utilisateurConnecte.profil.name()
+                == 'RESPONSABLE_EXPLOITATION'}"
+     th:href="@{/supervision}">
+    Accéder à la supervision
+  </a>
+</main>
+</body>
+</html>

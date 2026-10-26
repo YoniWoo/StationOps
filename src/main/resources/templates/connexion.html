@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>StationOps - Connexion</title>
+</head>
+<body>
+    <main>
+        <h1>StationOps</h1>
+        <h2>Connexion</h2>
+        <p th:if="${param.error}" role="alert">
+            L’adresse email ou le mot de passe est incorrect.
+        </p>
+
+        <p th:if="${param.logout}" role="status">
+            Vous avez été déconnecté.
+        </p>
+
+        <form th:action="@{/login}" method="post">
+            <div>
+                <label for="email">Adresse email</label>
+                <input
+                        id="email"
+                        name="username"
+                        type="email"
+                        autocomplete="username"
+                        required
+                        autofocus>
+            </div>
+
+            <div>
+                <label for="motDePasse">Mot de passe</label>
+                <input
+                        id="motDePasse"
+                        name="password"
+                        type="password"
+                        autocomplete="current-password"
+                        required>
+            </div>
+
+            <button type="submit">Se connecter</button>
+        </form>
+    </main>
+</body>
+</html>
