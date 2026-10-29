@@ -82,7 +82,7 @@ public class Evaluation {
             Incident incident,
             LocalDateTime dateEvaluation)
     {
-        if (dateEvaluation.isBefore(incident.getOuvertLe()))
+        if (dateEvaluation.isBefore(incident.getResoluLe()))
         {
             throw new EvaluationInterditeException(
                     "L'évaluation ne peut pas précéder la résolution d'incident.");
