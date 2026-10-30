@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StationOps — Équipements</title>
+</head>
+<body>
+<header th:replace="~{fragments/entete
+            :: entete(${utilisateurConnecte})}"></header>
+
+<main>
+  <h1>
+    Équipements de la station
+    <span th:text="${station.nom}"></span>
+  </h1>
+
+  <p th:if="${#lists.isEmpty(equipements)}">
+    Aucun équipement n’est enregistré dans cette station.
+  </p>
+
+  <table th:unless="${#lists.isEmpty(equipements)}">
+    <thead>
+    <tr>
+      <th scope="col">Référence</th>
+      <th scope="col">Libellé</th>
+      <th scope="col">Type</th>
+      <th scope="col">État</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    <tr th:each="equipement : ${equipements}">
+      <td th:text="${equipement.reference}"></td>
+      <td th:text="${equipement.libelle}"></td>
+      <td th:text="${equipement.type}"></td>
+      <td th:text="${equipement.etat}"></td>
+    </tr>
+    </tbody>
+  </table>
+
+  <p>
+    <a th:href="@{/stations}">Retour aux stations</a>
+  </p>
+</main>
+</body>
+</html>
