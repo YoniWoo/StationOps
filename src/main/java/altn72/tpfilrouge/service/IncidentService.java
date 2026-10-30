@@ -4,6 +4,7 @@ import altn72.tpfilrouge.exception.RessourceIntrouvableException;
 import altn72.tpfilrouge.modele.Equipement;
 import altn72.tpfilrouge.modele.Incident;
 import altn72.tpfilrouge.modele.Prestataire;
+import altn72.tpfilrouge.modele.StatutIncident;
 import altn72.tpfilrouge.modele.Utilisateur;
 import altn72.tpfilrouge.repository.EquipementRepository;
 import altn72.tpfilrouge.repository.IncidentRepository;
@@ -87,6 +88,26 @@ public class IncidentService
         Incident incident = trouverIncident(incidentId);
         Prestataire prestataire = trouverPrestataire(prestataireId);
         incident.affecterPrestataire(prestataire);
+    }
+
+    // F8 : on enregistre l'heure de resolution, puis l'equipement repasse en service
+    // seulement si il a plus aucun incident actif (il peut en avoir plusieurs en meme temps)
+    // @Transactional : si la remise en service plante, l'incident reste non résolu (RG10)
+    @Transactional
+    public void resoudreIncident(Integer incidentId)
+    {
+        Incident incident = trouverIncident(incidentId);
+        incident.resoudre(LocalDateTime.now(horloge));
+
+        Equipement equipement = incident.getEquipement();
+        boolean resteDesIncidentsActifs = incidentRepository.existsByEquipementIdAndStatutNot(
+                equipement.getId(),
+                StatutIncident.RESOLU);
+
+        if (!resteDesIncidentsActifs)
+        {
+            equipement.remettreEnService();
+        }
     }
 
     private Equipement trouverEquipement(Integer equipementId)

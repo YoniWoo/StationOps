@@ -147,6 +147,54 @@ public class IncidentServiceTest {
     }
 
     @Test
+    void resoudreLeDernierIncidentRemetLEquipementEnService()
+    {
+        equipement.mettreHorsService();
+        Incident incident = new Incident(
+                "Ascenseur immobilisé", equipement, agent, MAINTENANT.minusHours(5));
+        when(incidentRepository.findById(1)).thenReturn(Optional.of(incident));
+        when(incidentRepository.existsByEquipementIdAndStatutNot(any(), eq(StatutIncident.RESOLU)))
+                .thenReturn(false);
+
+        incidentService.resoudreIncident(1);
+
+        assertEquals(StatutIncident.RESOLU, incident.getStatut());
+        assertEquals(MAINTENANT, incident.getResoluLe());
+        assertEquals(EtatEquipement.EN_SERVICE, equipement.getEtat());
+    }
+
+    // un autre incident est encore ouvert sur le meme equipement donc il doit rester hors service
+    @Test
+    void resoudreAvecUnAutreIncidentActifLaisseLEquipementHorsService()
+    {
+        equipement.mettreHorsService();
+        Incident incident = new Incident(
+                "Ascenseur immobilisé", equipement, agent, MAINTENANT.minusHours(5));
+        when(incidentRepository.findById(1)).thenReturn(Optional.of(incident));
+        when(incidentRepository.existsByEquipementIdAndStatutNot(any(), eq(StatutIncident.RESOLU)))
+                .thenReturn(true);
+
+        incidentService.resoudreIncident(1);
+
+        assertEquals(StatutIncident.RESOLU, incident.getStatut());
+        assertEquals(EtatEquipement.HORS_SERVICE, equipement.getEtat());
+    }
+
+    @Test
+    void resoudreUnIncidentDejaResoluEstRefuse()
+    {
+        Incident incident = new Incident(
+                "Ascenseur immobilisé", equipement, agent, MAINTENANT.minusHours(5));
+        incident.resoudre(MAINTENANT.minusHours(1));
+        when(incidentRepository.findById(1)).thenReturn(Optional.of(incident));
+
+        assertThrows(
+                TransitionIncidentInterditeException.class,
+                () -> incidentService.resoudreIncident(1)
+        );
+    }
+
+    @Test
     void trouverUnIncidentInexistantLeveUneException()
     {
         when(incidentRepository.findById(99)).thenReturn(Optional.empty());
