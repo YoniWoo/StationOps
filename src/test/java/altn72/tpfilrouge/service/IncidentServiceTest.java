@@ -1,6 +1,7 @@
 package altn72.tpfilrouge.service;
 
 import altn72.tpfilrouge.exception.RessourceIntrouvableException;
+import altn72.tpfilrouge.exception.TransitionIncidentInterditeException;
 import altn72.tpfilrouge.modele.*;
 import altn72.tpfilrouge.repository.EquipementRepository;
 import altn72.tpfilrouge.repository.IncidentRepository;
@@ -79,6 +80,32 @@ public class IncidentServiceTest {
                 () -> incidentService.declarerIncident(99, "Panne", 2)
         );
         verify(incidentRepository, never()).save(any());
+    }
+
+    @Test
+    void modifierDescriptionRemplaceLaDescription()
+    {
+        Incident incident = new Incident(
+                "Ascenseur bloque", equipement, agent, MAINTENANT);
+        when(incidentRepository.findById(1)).thenReturn(Optional.of(incident));
+
+        incidentService.modifierDescription(1, "Ascenseur bloqué au 2e niveau");
+
+        assertEquals("Ascenseur bloqué au 2e niveau", incident.getDescription());
+    }
+
+    @Test
+    void modifierDescriptionDUnIncidentResoluEstRefuse()
+    {
+        Incident incident = new Incident(
+                "Ascenseur immobilisé", equipement, agent, MAINTENANT);
+        incident.resoudre(MAINTENANT);
+        when(incidentRepository.findById(1)).thenReturn(Optional.of(incident));
+
+        assertThrows(
+                TransitionIncidentInterditeException.class,
+                () -> incidentService.modifierDescription(1, "Autre description")
+        );
     }
 
     @Test
