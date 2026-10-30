@@ -3,9 +3,11 @@ package altn72.tpfilrouge.service;
 import altn72.tpfilrouge.exception.RessourceIntrouvableException;
 import altn72.tpfilrouge.modele.Equipement;
 import altn72.tpfilrouge.modele.Incident;
+import altn72.tpfilrouge.modele.Prestataire;
 import altn72.tpfilrouge.modele.Utilisateur;
 import altn72.tpfilrouge.repository.EquipementRepository;
 import altn72.tpfilrouge.repository.IncidentRepository;
+import altn72.tpfilrouge.repository.PrestataireRepository;
 import altn72.tpfilrouge.repository.UtilisateurRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +23,7 @@ public class IncidentService
     private final IncidentRepository incidentRepository;
     private final EquipementRepository equipementRepository;
     private final UtilisateurRepository utilisateurRepository;
+    private final PrestataireRepository prestataireRepository;
 
     // horloge injectée pour pouvoir fixer l'heure dans les tests
     private final Clock horloge;
@@ -29,11 +32,13 @@ public class IncidentService
             IncidentRepository incidentRepository,
             EquipementRepository equipementRepository,
             UtilisateurRepository utilisateurRepository,
+            PrestataireRepository prestataireRepository,
             Clock horloge)
     {
         this.incidentRepository = incidentRepository;
         this.equipementRepository = equipementRepository;
         this.utilisateurRepository = utilisateurRepository;
+        this.prestataireRepository = prestataireRepository;
         this.horloge = horloge;
     }
 
@@ -75,6 +80,15 @@ public class IncidentService
         incident.modifierDescription(description);
     }
 
+    // F7 : marche aussi pour reaffecter, le modele refuse si l'incident est deja résolu (RG5)
+    @Transactional
+    public void affecterPrestataire(Integer incidentId, Integer prestataireId)
+    {
+        Incident incident = trouverIncident(incidentId);
+        Prestataire prestataire = trouverPrestataire(prestataireId);
+        incident.affecterPrestataire(prestataire);
+    }
+
     private Equipement trouverEquipement(Integer equipementId)
     {
         return equipementRepository.findById(equipementId)
@@ -87,5 +101,12 @@ public class IncidentService
         return utilisateurRepository.findById(utilisateurId)
                 .orElseThrow(() -> new RessourceIntrouvableException(
                         "Aucun utilisateur ne correspond à l'identifiant " + utilisateurId));
+    }
+
+    private Prestataire trouverPrestataire(Integer prestataireId)
+    {
+        return prestataireRepository.findById(prestataireId)
+                .orElseThrow(() -> new RessourceIntrouvableException(
+                        "Aucun prestataire ne correspond à l'identifiant " + prestataireId));
     }
 }

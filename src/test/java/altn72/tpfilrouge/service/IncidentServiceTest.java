@@ -5,6 +5,7 @@ import altn72.tpfilrouge.exception.TransitionIncidentInterditeException;
 import altn72.tpfilrouge.modele.*;
 import altn72.tpfilrouge.repository.EquipementRepository;
 import altn72.tpfilrouge.repository.IncidentRepository;
+import altn72.tpfilrouge.repository.PrestataireRepository;
 import altn72.tpfilrouge.repository.UtilisateurRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ public class IncidentServiceTest {
     private IncidentRepository incidentRepository;
     private EquipementRepository equipementRepository;
     private UtilisateurRepository utilisateurRepository;
+    private PrestataireRepository prestataireRepository;
     private IncidentService incidentService;
 
     private Equipement equipement;
@@ -36,6 +38,7 @@ public class IncidentServiceTest {
         incidentRepository = mock(IncidentRepository.class);
         equipementRepository = mock(EquipementRepository.class);
         utilisateurRepository = mock(UtilisateurRepository.class);
+        prestataireRepository = mock(PrestataireRepository.class);
 
         // horloge bloquée sur MAINTENANT pour savoir exactement quelle date attendre
         Clock horloge = Clock.fixed(MAINTENANT.atZone(ZONE).toInstant(), ZONE);
@@ -44,6 +47,7 @@ public class IncidentServiceTest {
                 incidentRepository,
                 equipementRepository,
                 utilisateurRepository,
+                prestataireRepository,
                 horloge);
 
         equipement = new Equipement(
@@ -105,6 +109,40 @@ public class IncidentServiceTest {
         assertThrows(
                 TransitionIncidentInterditeException.class,
                 () -> incidentService.modifierDescription(1, "Autre description")
+        );
+    }
+
+    @Test
+    void affecterPuisReaffecterChangeLePrestataire()
+    {
+        Incident incident = new Incident(
+                "Portique bloqué", equipement, agent, MAINTENANT);
+        Prestataire premier = new Prestataire("Mobilité Maintenance", "contact@mm.test", null);
+        Prestataire second = new Prestataire("Rapid Depannage", "contact@rd.test", null);
+        when(incidentRepository.findById(1)).thenReturn(Optional.of(incident));
+        when(prestataireRepository.findById(1)).thenReturn(Optional.of(premier));
+        when(prestataireRepository.findById(2)).thenReturn(Optional.of(second));
+
+        incidentService.affecterPrestataire(1, 1);
+        incidentService.affecterPrestataire(1, 2);
+
+        assertEquals(StatutIncident.AFFECTE, incident.getStatut());
+        assertSame(second, incident.getPrestataire());
+    }
+
+    @Test
+    void affecterUnIncidentResoluEstRefuse()
+    {
+        Incident incident = new Incident(
+                "Portique bloqué", equipement, agent, MAINTENANT);
+        incident.resoudre(MAINTENANT);
+        Prestataire prestataire = new Prestataire("Mobilité Maintenance", "contact@mm.test", null);
+        when(incidentRepository.findById(1)).thenReturn(Optional.of(incident));
+        when(prestataireRepository.findById(1)).thenReturn(Optional.of(prestataire));
+
+        assertThrows(
+                TransitionIncidentInterditeException.class,
+                () -> incidentService.affecterPrestataire(1, 1)
         );
     }
 
