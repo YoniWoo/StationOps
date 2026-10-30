@@ -66,6 +66,15 @@ public class IncidentService
         return incident;
     }
 
+    // F6 : seulement la description est modifiable, et tant que l'incident est pas résolu
+    // pas besoin de save, hibernate voit le changement a la fin de la transaction
+    @Transactional
+    public void modifierDescription(Integer incidentId, String description)
+    {
+        Incident incident = trouverIncident(incidentId);
+        incident.modifierDescription(description);
+    }
+
     private Equipement trouverEquipement(Integer equipementId)
     {
         return equipementRepository.findById(equipementId)
