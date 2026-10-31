@@ -31,7 +31,11 @@
 
     <tbody>
     <tr th:each="equipement : ${equipements}">
-      <td th:text="${equipement.reference}"></td>
+      <td>
+        <a th:href="@{/equipements/{id}(id=${equipement.id})}"
+           th:text="${equipement.reference}">
+        </a>
+      </td>
       <td th:text="${equipement.libelle}"></td>
       <td th:text="${equipement.type}"></td>
       <td th:text="${equipement.etat}"></td>
