@@ -86,6 +86,32 @@ Commande ciblée :
 
 - Les tests HTTP de connexion, déconnexion et restrictions d’accès ont été reportés. Les protections de la future API restent également à vérifier.
 
+### Authentification et sécurité — F1
+
+Neuf tests HTTP automatisés ont été exécutés avec MockMvc,
+la configuration Spring Security réelle et la base H2 du profil test.
+
+Cas vérifiés :
+- Page de connexion accessible sans authentification.
+- Visiteur redirigé vers la connexion pour une page protégée.
+- Connexion réussie avec des identifiants valides.
+- Refus d’un mot de passe incorrect.
+- Accès à la supervision interdit à l’agent.
+- Accès à la supervision autorisé au responsable.
+- Déconnexion avec invalidation de la session.
+- Connexion refusée sans jeton CSRF.
+- Déconnexion refusée sans jeton CSRF.
+
+Commande :
+./mvnw -Dtest=SecuriteHttpTest test
+
+Résultat : 9 tests réussis, aucun échec.
+
+Les comptes de test sont créés dans H2 et les transactions sont
+annulées après chaque test. La base MariaDB n’est pas modifiée.
+
+Les protections des futurs endpoints REST restent à vérifier au J4.
+
 ## Choix Technique - Authentification et sécurité
 
 L’authentification repose sur Spring Security et une session HTTP.
