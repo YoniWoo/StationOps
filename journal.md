@@ -143,7 +143,25 @@ La responsabilité unique est mise en œuvre dans la séparation entre accès au
 L’inversion des dépendances est illustrée par l’injection de l’interface UtilisateurRepository et de PasswordEncoder. Le repository peut ainsi être remplacé par une simulation pendant les tests.
 Les autres principes SOLID seront analysés au fil de l’implémentation et justifiés dans le journal.
 
+### Validation manuelle des consultations — F2 et F3
 
+Les parcours de consultation ont été vérifiés avec les profils
+Responsable d’exploitation et Agent terrain.
+
+- Affichage des stations et de leurs équipements.
+- Affichage de la fiche équipement et de ses informations.
+- Affichage des incidents en cours et résolus.
+- Vérification du classement des incidents par date d’ouverture décroissante.
+- Affichage d’un message lorsqu’un équipement ne possède aucun incident.
+- Affichage d’une page 404 pour un équipement inexistant.
+- Vérification des liens de retour.
+
+Des données complémentaires ont été ajoutées manuellement dans la base
+pour vérifier les cas sans incident et avec plusieurs incidents.
+Ces ajouts ne font pas partie du script d’initialisation de démonstration.
+
+Ces vérifications sont manuelles ; elles ne constituent pas des tests
+HTTP automatisés.
 
 ## Lot Alpha
 

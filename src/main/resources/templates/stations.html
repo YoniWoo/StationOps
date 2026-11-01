@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StationOps — Stations</title>
+</head>
+<body>
+<header th:replace="~{fragments/entete
+            :: entete(${utilisateurConnecte})}"></header>
+
+<main>
+  <h1>Stations du réseau</h1>
+
+  <p th:if="${#lists.isEmpty(stations)}">
+    Aucune station n’est disponible.
+  </p>
+
+  <ul th:unless="${#lists.isEmpty(stations)}">
+    <li th:each="station : ${stations}">
+      <a th:href="@{/stations/{id}/equipements(id=${station.id})}"
+         th:text="${station.nom}">
+      </a>
+    </li>
+  </ul>
+
+  <a th:href="@{/}">Retour à l’accueil</a>
+</main>
+</body>
+</html>
