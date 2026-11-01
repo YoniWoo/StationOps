@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.List;
 
 // Service qui gere le cycle de vie des incidents
 // les regles sur un seul incident sont dans le modele, ici c'est ce qui touche plusieurs entitées
@@ -108,6 +109,12 @@ public class IncidentService
         {
             equipement.remettreEnService();
         }
+    }
+
+    // F9 : du plus récent au plus ancien par date de resolution (RG7)
+    public List<Incident> listerHistorique()
+    {
+        return incidentRepository.trouverHistorique(StatutIncident.RESOLU);
     }
 
     private Equipement trouverEquipement(Integer equipementId)
