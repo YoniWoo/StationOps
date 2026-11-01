@@ -78,4 +78,35 @@ public class IncidentRepositoryTest {
 
         assertEquals(List.of(resolu), historique);
     }
+
+    @Test
+    void supervisionExclutLesIncidentsResolus()
+    {
+        Incident nonAffecte = incidentRepository.save(
+                new Incident(
+                        "Ascenseur bloqué",
+                        equipement,
+                        agent,
+                        DEBUT));
+
+        Incident affecte = new Incident(
+                "Bruit inhabituel",
+                equipement,
+                agent,
+                DEBUT.plusHours(1));
+
+        affecte.affecterPrestataire(prestataire);
+        affecte = incidentRepository.save(affecte);
+
+        creerIncidentResolu(
+                "Ancienne panne réparée",
+                DEBUT.plusDays(1));
+
+        List<Incident> incidentsActifs = incidentRepository
+                .trouverIncidentsActifs(StatutIncident.RESOLU);
+
+        assertEquals(
+                List.of(nonAffecte, affecte),
+                incidentsActifs);
+    }
 }

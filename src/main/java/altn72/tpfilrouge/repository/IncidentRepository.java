@@ -26,4 +26,13 @@ public interface IncidentRepository
             + "WHERE i.statut = :statut "
             + "ORDER BY i.resoluLe DESC")
     List<Incident> trouverHistorique(@Param("statut") StatutIncident statut);
+
+    @Query("SELECT i FROM Incident i "
+            + "JOIN FETCH i.equipement e "
+            + "JOIN FETCH e.station "
+            + "LEFT JOIN FETCH i.prestataire "
+            + "WHERE i.statut <> :statutExclu "
+            + "ORDER BY i.ouvertLe ASC, i.id ASC")
+    List<Incident> trouverIncidentsActifs(
+            @Param("statutExclu") StatutIncident statutExclu);
 }

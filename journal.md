@@ -163,6 +163,40 @@ Ces ajouts ne font pas partie du script d’initialisation de démonstration.
 Ces vérifications sont manuelles ; elles ne constituent pas des tests
 HTTP automatisés.
 
+### Supervision
+
+L’urgence est calculée à la consultation et n’est pas stockée en base.
+Les seuils sont centralisés dans CalculUrgenceService, avec une horloge
+injectée pour rendre les tests reproductibles.
+
+Les incidents affectés ont une présentation bleue distincte.
+Les styles sont regroupés dans un fichier CSS séparé.
+
+Les filtres sont appliqués dans le service sur la liste des incidents actifs.
+Les indicateurs décrivent uniquement les résultats filtrés.
+
+Le calcul actuel utilise LocalDateTime et mesure une durée en heure locale ;
+sa limite lors des changements d’heure reste identifiée.
+
+### Supervision des incidents — F11
+
+- Six tests unitaires du calcul d’urgence avec une horloge fixe :
+  47 h, 48 h, juste avant 72 h, 72 h, incident affecté et incident résolu.
+- Trois tests de repository sur H2 :
+  tri de l’historique, exclusion des actifs de l’historique
+  et exclusion des résolus de la supervision.
+- Résultat : 9 tests réussis sur 9.
+
+Vérifications manuelles :
+- Affichage des incidents actifs et de leurs informations.
+- Filtres par station et affectation, seuls et combinés.
+- Indicateurs cohérents avec les résultats filtrés, y compris une liste vide.
+- Accès responsable autorisé, accès agent refusé avec un statut HTTP 403
+  et redirection vers la connexion pour un utilisateur déconnecté.
+
+Le lien vers le détail d’un incident (F5) reste à intégrer :
+J3-05 demeure en attente.
+
 ## Lot Alpha
 
 TBD
