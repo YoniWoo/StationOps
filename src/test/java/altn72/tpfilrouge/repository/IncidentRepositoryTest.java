@@ -8,6 +8,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -77,5 +78,17 @@ public class IncidentRepositoryTest {
         List<Incident> historique = incidentRepository.trouverHistorique(StatutIncident.RESOLU);
 
         assertEquals(List.of(resolu), historique);
+    }
+
+    @Test
+    void detailChargeLaStationEtLePrestataire()
+    {
+        Incident incident = creerIncidentResolu("Portique bloqué", DEBUT.plusDays(1));
+
+        Optional<Incident> detail = incidentRepository.trouverDetail(incident.getId());
+
+        assertTrue(detail.isPresent());
+        assertEquals("Nation", detail.get().getEquipement().getStation().getNom());
+        assertEquals("Mobilité Maintenance", detail.get().getPrestataire().getNom());
     }
 }

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface IncidentRepository
     extends JpaRepository<Incident, Integer> {
@@ -26,4 +27,12 @@ public interface IncidentRepository
             + "WHERE i.statut = :statut "
             + "ORDER BY i.resoluLe DESC")
     List<Incident> trouverHistorique(@Param("statut") StatutIncident statut);
+
+    // F5 : meme principe que l'historique, la page de detail affiche la station et le prestataire
+    @Query("SELECT i FROM Incident i "
+            + "JOIN FETCH i.equipement e "
+            + "JOIN FETCH e.station "
+            + "LEFT JOIN FETCH i.prestataire "
+            + "WHERE i.id = :id")
+    Optional<Incident> trouverDetail(@Param("id") Integer id);
 }

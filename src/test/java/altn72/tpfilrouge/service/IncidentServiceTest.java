@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
@@ -191,6 +192,41 @@ public class IncidentServiceTest {
         assertThrows(
                 TransitionIncidentInterditeException.class,
                 () -> incidentService.resoudreIncident(1)
+        );
+    }
+
+    @Test
+    void dureeDUnIncidentOuvertSeCalculeJusquaMaintenant()
+    {
+        Incident incident = new Incident(
+                "Portique bloqué", equipement, agent, MAINTENANT.minusHours(47));
+
+        Duration duree = incidentService.calculerDureeOuverture(incident);
+
+        assertEquals(47, duree.toHours());
+    }
+
+    // une fois résolu la durée doit plus augmenter, elle s'arrete a la resolution
+    @Test
+    void dureeDUnIncidentResoluSArreteALaResolution()
+    {
+        Incident incident = new Incident(
+                "Portique bloqué", equipement, agent, MAINTENANT.minusHours(30));
+        incident.resoudre(MAINTENANT.minusHours(20));
+
+        Duration duree = incidentService.calculerDureeOuverture(incident);
+
+        assertEquals(10, duree.toHours());
+    }
+
+    @Test
+    void trouverLeDetailDUnIncidentInexistantLeveUneException()
+    {
+        when(incidentRepository.trouverDetail(99)).thenReturn(Optional.empty());
+
+        assertThrows(
+                RessourceIntrouvableException.class,
+                () -> incidentService.trouverDetailIncident(99)
         );
     }
 
