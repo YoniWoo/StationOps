@@ -86,6 +86,32 @@ Commande ciblée :
 
 - Les tests HTTP de connexion, déconnexion et restrictions d’accès ont été reportés. Les protections de la future API restent également à vérifier.
 
+### Authentification et sécurité — F1
+
+Neuf tests HTTP automatisés ont été exécutés avec MockMvc,
+la configuration Spring Security réelle et la base H2 du profil test.
+
+Cas vérifiés :
+- Page de connexion accessible sans authentification.
+- Visiteur redirigé vers la connexion pour une page protégée.
+- Connexion réussie avec des identifiants valides.
+- Refus d’un mot de passe incorrect.
+- Accès à la supervision interdit à l’agent.
+- Accès à la supervision autorisé au responsable.
+- Déconnexion avec invalidation de la session.
+- Connexion refusée sans jeton CSRF.
+- Déconnexion refusée sans jeton CSRF.
+
+Commande :
+./mvnw -Dtest=SecuriteHttpTest test
+
+Résultat : 9 tests réussis, aucun échec.
+
+Les comptes de test sont créés dans H2 et les transactions sont
+annulées après chaque test. La base MariaDB n’est pas modifiée.
+
+Les protections des futurs endpoints REST restent à vérifier au J4.
+
 ## Choix Technique - Authentification et sécurité
 
 L’authentification repose sur Spring Security et une session HTTP.
@@ -143,7 +169,59 @@ La responsabilité unique est mise en œuvre dans la séparation entre accès au
 L’inversion des dépendances est illustrée par l’injection de l’interface UtilisateurRepository et de PasswordEncoder. Le repository peut ainsi être remplacé par une simulation pendant les tests.
 Les autres principes SOLID seront analysés au fil de l’implémentation et justifiés dans le journal.
 
+### Validation manuelle des consultations — F2 et F3
 
+Les parcours de consultation ont été vérifiés avec les profils
+Responsable d’exploitation et Agent terrain.
+
+- Affichage des stations et de leurs équipements.
+- Affichage de la fiche équipement et de ses informations.
+- Affichage des incidents en cours et résolus.
+- Vérification du classement des incidents par date d’ouverture décroissante.
+- Affichage d’un message lorsqu’un équipement ne possède aucun incident.
+- Affichage d’une page 404 pour un équipement inexistant.
+- Vérification des liens de retour.
+
+Des données complémentaires ont été ajoutées manuellement dans la base
+pour vérifier les cas sans incident et avec plusieurs incidents.
+Ces ajouts ne font pas partie du script d’initialisation de démonstration.
+
+Ces vérifications sont manuelles ; elles ne constituent pas des tests
+HTTP automatisés.
+
+### Supervision
+
+L’urgence est calculée à la consultation et n’est pas stockée en base.
+Les seuils sont centralisés dans CalculUrgenceService, avec une horloge
+injectée pour rendre les tests reproductibles.
+
+Les incidents affectés ont une présentation bleue distincte.
+Les styles sont regroupés dans un fichier CSS séparé.
+
+Les filtres sont appliqués dans le service sur la liste des incidents actifs.
+Les indicateurs décrivent uniquement les résultats filtrés.
+
+Le calcul actuel utilise LocalDateTime et mesure une durée en heure locale ;
+sa limite lors des changements d’heure reste identifiée.
+
+### Supervision des incidents — F11
+
+- Six tests unitaires du calcul d’urgence avec une horloge fixe :
+  47 h, 48 h, juste avant 72 h, 72 h, incident affecté et incident résolu.
+- Trois tests de repository sur H2 :
+  tri de l’historique, exclusion des actifs de l’historique
+  et exclusion des résolus de la supervision.
+- Résultat : 9 tests réussis sur 9.
+
+Vérifications manuelles :
+- Affichage des incidents actifs et de leurs informations.
+- Filtres par station et affectation, seuls et combinés.
+- Indicateurs cohérents avec les résultats filtrés, y compris une liste vide.
+- Accès responsable autorisé, accès agent refusé avec un statut HTTP 403
+  et redirection vers la connexion pour un utilisateur déconnecté.
+
+Le lien vers le détail d’un incident (F5) reste à intégrer :
+J3-05 demeure en attente.
 
 ## Lot Alpha
 

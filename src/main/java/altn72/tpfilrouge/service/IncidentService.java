@@ -14,7 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 
 // Service qui gere le cycle de vie des incidents
 // les regles sur un seul incident sont dans le modele, ici c'est ce qui touche plusieurs entitées
@@ -46,8 +48,26 @@ public class IncidentService
     public Incident trouverIncident(Integer incidentId)
     {
         return incidentRepository.findById(incidentId)
-                .orElseThrow(() -> new RessourceIntrouvableException(
-                        "Aucun incident ne correspond à l'identifiant " + incidentId));
+                .orElseThrow(() -> incidentIntrouvable(incidentId));
+    }
+
+    // F5 : version qui charge aussi l'equipement, la station et le prestataire pour la page
+    public Incident trouverDetailIncident(Integer incidentId)
+    {
+        return incidentRepository.trouverDetail(incidentId)
+                .orElseThrow(() -> incidentIntrouvable(incidentId));
+    }
+
+    // F5 : duree depuis l'ouverture, ou jusqu'a la resolution si l'incident est résolu
+    // calculée a chaque affichage avec l'horloge, jamais stockée en base
+    public Duration calculerDureeOuverture(Incident incident)
+    {
+        LocalDateTime fin = LocalDateTime.now(horloge);
+        if (incident.estResolu())
+        {
+            fin = incident.getResoluLe();
+        }
+        return Duration.between(incident.getOuvertLe(), fin);
     }
 
     // F4 : l'incident est cree sans prestataire (RG1) et l'equipement passe hors service
@@ -108,6 +128,18 @@ public class IncidentService
         {
             equipement.remettreEnService();
         }
+    }
+
+    // F9 : du plus récent au plus ancien par date de resolution (RG7)
+    public List<Incident> listerHistorique()
+    {
+        return incidentRepository.trouverHistorique(StatutIncident.RESOLU);
+    }
+
+    private RessourceIntrouvableException incidentIntrouvable(Integer incidentId)
+    {
+        return new RessourceIntrouvableException(
+                "Aucun incident ne correspond à l'identifiant " + incidentId);
     }
 
     private Equipement trouverEquipement(Integer equipementId)

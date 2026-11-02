@@ -1,25 +1,33 @@
 <!DOCTYPE html>
 <html lang="fr" xmlns:th="http://www.thymeleaf.org">
-<body>
-<header th:fragment="entete(utilisateur)"
-        style="display: flex; justify-content: space-between;
-                   align-items: center; gap: 1rem;">
+    <body>
+        <header th:fragment="entete(utilisateur)"
+                style="display: flex; justify-content: space-between;
+                           align-items: center; gap: 1rem;">
 
-  <a th:href="@{/}">StationOps</a>
+          <a th:href="@{/}">StationOps</a>
 
-  <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <span>
-                Bonjour
-                <span th:text="${utilisateur.prenom}"></span>
-                (<span th:text="${utilisateur.libelleProfil}"></span>)
-            </span>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span>
+                  Bonjour
+                  <span th:text="${utilisateur.prenom}"></span>
+                  (<span th:text="${utilisateur.libelleProfil}"></span>)
+              </span>
+              <span aria-hidden="true">|</span>
+              <nav aria-label="Navigation principale">
+                  <a th:href="@{/}">Accueil</a>
+                  <a th:href="@{/stations}">Stations</a>
 
-    <span aria-hidden="true">|</span>
-
-    <form th:action="@{/logout}" method="post">
-      <button type="submit">Déconnectez-vous</button>
-    </form>
-  </div>
-</header>
-</body>
+                  <a th:if="${utilisateurConnecte.profil.name()
+                            == 'RESPONSABLE_EXPLOITATION'}"
+                     th:href="@{/supervision}">
+                      Supervision
+                  </a>
+              </nav>
+              <form th:action="@{/logout}" method="post">
+                <button type="submit">Déconnectez-vous</button>
+              </form>
+          </div>
+        </header>
+    </body>
 </html>
