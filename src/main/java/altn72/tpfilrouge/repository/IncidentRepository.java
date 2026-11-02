@@ -35,4 +35,13 @@ public interface IncidentRepository
             + "LEFT JOIN FETCH i.prestataire "
             + "WHERE i.id = :id")
     Optional<Incident> trouverDetail(@Param("id") Integer id);
+
+    @Query("SELECT i FROM Incident i "
+            + "JOIN FETCH i.equipement e "
+            + "JOIN FETCH e.station "
+            + "LEFT JOIN FETCH i.prestataire "
+            + "WHERE i.statut <> :statutExclu "
+            + "ORDER BY i.ouvertLe ASC, i.id ASC")
+    List<Incident> trouverIncidentsActifs(
+            @Param("statutExclu") StatutIncident statutExclu);
 }
