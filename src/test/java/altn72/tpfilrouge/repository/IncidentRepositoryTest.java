@@ -122,4 +122,41 @@ public class IncidentRepositoryTest {
                 List.of(nonAffecte, affecte),
                 incidentsActifs);
     }
+    @Test
+    void comptageNatifCompteSeulementLesIncidentsActifsDeLEquipement()
+    {
+        incidentRepository.save(new Incident(
+                "Première panne active",
+                equipement,
+                agent,
+                DEBUT));
+
+        incidentRepository.save(new Incident(
+                "Deuxième panne active",
+                equipement,
+                agent,
+                DEBUT.plusHours(1)));
+
+        creerIncidentResolu(
+                "Ancienne panne réparée",
+                DEBUT.plusDays(1));
+
+        Equipement autreEquipement = equipementRepository.save(
+                new Equipement(
+                        "TEST-AUTRE-001",
+                        "Autre équipement",
+                        TypeEquipement.ASCENSEUR,
+                        equipement.getStation()));
+
+        incidentRepository.save(new Incident(
+                "Panne sur un autre équipement",
+                autreEquipement,
+                agent,
+                DEBUT));
+
+        assertEquals(
+                2L,
+                incidentRepository.compterIncidentsActifsParEquipement(
+                        equipement.getId()));
+    }
 }

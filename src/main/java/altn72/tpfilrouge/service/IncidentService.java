@@ -120,11 +120,10 @@ public class IncidentService
         incident.resoudre(LocalDateTime.now(horloge));
 
         Equipement equipement = incident.getEquipement();
-        boolean resteDesIncidentsActifs = incidentRepository.existsByEquipementIdAndStatutNot(
-                equipement.getId(),
-                StatutIncident.RESOLU);
+        long incidentsActifs = incidentRepository
+                .compterIncidentsActifsParEquipement(equipement.getId());
 
-        if (!resteDesIncidentsActifs)
+        if (incidentsActifs == 0)
         {
             equipement.remettreEnService();
         }

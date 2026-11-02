@@ -18,7 +18,7 @@
                   <a th:href="@{/}">Accueil</a>
                   <a th:href="@{/stations}">Stations</a>
 
-                  <a th:if="${utilisateurConnecte.profil.name()
+                  <a th:if="${utilisateur.profil.name()
                             == 'RESPONSABLE_EXPLOITATION'}"
                      th:href="@{/supervision}">
                       Supervision

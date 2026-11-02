@@ -1,6 +1,5 @@
 package altn72.tpfilrouge.controleur;
 
-import altn72.tpfilrouge.modele.Equipement;
 import altn72.tpfilrouge.securite.UtilisateurConnecte;
 import altn72.tpfilrouge.service.EquipementService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

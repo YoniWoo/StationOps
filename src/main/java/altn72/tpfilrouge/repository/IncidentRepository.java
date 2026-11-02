@@ -13,9 +13,16 @@ public interface IncidentRepository
     extends JpaRepository<Incident, Integer> {
     List<Incident> findByEquipementIdOrderByOuvertLeDesc(Integer equipementId);
 
-    boolean existsByEquipementIdAndStatutNot(
-            Integer equipementid,
-            StatutIncident statut);
+    @Query(
+            value = """
+                SELECT COUNT(*)
+                FROM incidents
+                WHERE equipement_id = :equipementId
+                  AND statut <> 'RESOLU'
+                """,
+            nativeQuery = true)
+    long compterIncidentsActifsParEquipement(
+            @Param("equipementId") Integer equipementId);
 
     // F9 : JOIN FETCH pour avoir l'equipement, sa station et le prestataire en une seule requete
     // sinon avec open-in-view=false la page plante en LazyInitializationException

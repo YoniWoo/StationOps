@@ -154,8 +154,9 @@ public class IncidentServiceTest {
         Incident incident = new Incident(
                 "Ascenseur immobilisé", equipement, agent, MAINTENANT.minusHours(5));
         when(incidentRepository.findById(1)).thenReturn(Optional.of(incident));
-        when(incidentRepository.existsByEquipementIdAndStatutNot(any(), eq(StatutIncident.RESOLU)))
-                .thenReturn(false);
+        when(incidentRepository.compterIncidentsActifsParEquipement(
+                equipement.getId()))
+                .thenReturn(0L);
 
         incidentService.resoudreIncident(1);
 
@@ -172,8 +173,9 @@ public class IncidentServiceTest {
         Incident incident = new Incident(
                 "Ascenseur immobilisé", equipement, agent, MAINTENANT.minusHours(5));
         when(incidentRepository.findById(1)).thenReturn(Optional.of(incident));
-        when(incidentRepository.existsByEquipementIdAndStatutNot(any(), eq(StatutIncident.RESOLU)))
-                .thenReturn(true);
+        when(incidentRepository.compterIncidentsActifsParEquipement(
+                equipement.getId()))
+                .thenReturn(1L);
 
         incidentService.resoudreIncident(1);
 
@@ -240,4 +242,5 @@ public class IncidentServiceTest {
                 () -> incidentService.trouverIncident(99)
         );
     }
+
 }
