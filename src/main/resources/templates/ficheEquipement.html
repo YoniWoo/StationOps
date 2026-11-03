@@ -36,7 +36,10 @@
     </thead>
     <tbody>
     <tr th:each="incident : ${fiche.incidents}">
-      <td th:text="${incident.id}"></td>
+      <td>
+        <a th:href="@{/incidents/{id}(id=${incident.id})}"
+           th:text="${incident.id}"></a>
+      </td>
       <td th:text="${incident.description}"></td>
       <td th:text="${incident.statut}"></td>
 

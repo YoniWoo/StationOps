@@ -1,5 +1,6 @@
 package altn72.tpfilrouge.service;
 
+import altn72.tpfilrouge.dto.IncidentDetailDto;
 import altn72.tpfilrouge.exception.RessourceIntrouvableException;
 import altn72.tpfilrouge.exception.TransitionIncidentInterditeException;
 import altn72.tpfilrouge.modele.*;
@@ -230,6 +231,21 @@ public class IncidentServiceTest {
                 RessourceIntrouvableException.class,
                 () -> incidentService.trouverDetailIncident(99)
         );
+    }
+
+    @Test
+    void consulterDetailDonneLaStationEtLaDuree()
+    {
+        Incident incident = new Incident(
+                "Ascenseur immobilisé", equipement, agent, MAINTENANT.minusMinutes(47 * 60 + 30));
+        when(incidentRepository.trouverDetail(1)).thenReturn(Optional.of(incident));
+
+        IncidentDetailDto detail = incidentService.consulterDetail(1);
+
+        assertEquals("République", detail.stationNom());
+        assertEquals(47, detail.dureeHeures());
+        assertEquals(30, detail.dureeMinutes());
+        assertNull(detail.prestataireNom());
     }
 
     @Test

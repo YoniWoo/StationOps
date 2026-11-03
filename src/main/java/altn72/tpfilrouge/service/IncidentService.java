@@ -1,5 +1,6 @@
 package altn72.tpfilrouge.service;
 
+import altn72.tpfilrouge.dto.IncidentDetailDto;
 import altn72.tpfilrouge.exception.RessourceIntrouvableException;
 import altn72.tpfilrouge.modele.Equipement;
 import altn72.tpfilrouge.modele.Incident;
@@ -68,6 +69,33 @@ public class IncidentService
             fin = incident.getResoluLe();
         }
         return Duration.between(incident.getOuvertLe(), fin);
+    }
+
+    // F5 : tout ce qu'il faut pour la page detail, la durée est recalculée a chaque affichage
+    public IncidentDetailDto consulterDetail(Integer incidentId)
+    {
+        Incident incident = trouverDetailIncident(incidentId);
+        Duration duree = calculerDureeOuverture(incident);
+
+        String prestataireNom = null;
+        if (incident.getPrestataire() != null)
+        {
+            prestataireNom = incident.getPrestataire().getNom();
+        }
+
+        return new IncidentDetailDto(
+                incident.getId(),
+                incident.getDescription(),
+                incident.getStatut(),
+                incident.getOuvertLe(),
+                incident.getResoluLe(),
+                incident.getEquipement().getId(),
+                incident.getEquipement().getReference(),
+                incident.getEquipement().getLibelle(),
+                incident.getEquipement().getStation().getNom(),
+                prestataireNom,
+                duree.toHours(),
+                duree.toMinutesPart());
     }
 
     // F4 : l'incident est cree sans prestataire (RG1) et l'equipement passe hors service
