@@ -8,9 +8,13 @@ import altn72.tpfilrouge.modele.Incident;
 import altn72.tpfilrouge.securite.UtilisateurConnecte;
 import altn72.tpfilrouge.service.EquipementService;
 import altn72.tpfilrouge.service.EvaluationService;
+import altn72.tpfilrouge.service.ExportCsvService;
 import altn72.tpfilrouge.service.IncidentService;
 import altn72.tpfilrouge.service.PrestataireService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,6 +26,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.nio.charset.StandardCharsets;
+
 // pages web des incidents, les regles restent dans les services
 @Controller
 @RequestMapping("/incidents")
@@ -30,17 +36,20 @@ public class IncidentControleur {
     private final EvaluationService evaluationService;
     private final PrestataireService prestataireService;
     private final EquipementService equipementService;
+    private final ExportCsvService exportCsvService;
 
     public IncidentControleur(
             IncidentService incidentService,
             EvaluationService evaluationService,
             PrestataireService prestataireService,
-            EquipementService equipementService)
+            EquipementService equipementService,
+            ExportCsvService exportCsvService)
     {
         this.incidentService = incidentService;
         this.evaluationService = evaluationService;
         this.prestataireService = prestataireService;
         this.equipementService = equipementService;
+        this.exportCsvService = exportCsvService;
     }
 
     // F9 : accessible aux 2 profils en lecture
@@ -53,6 +62,24 @@ public class IncidentControleur {
         model.addAttribute("incidents", evaluationService.listerHistoriqueAvecNotes());
 
         return "historique";
+    }
+
+    // lot alpha : telechargement du CSV
+    // ResponseEntity ici car il faut regler les en-tetes (type du fichier et nom de telechargement)
+    @GetMapping("/historique/export")
+    public ResponseEntity<byte[]> exporterHistorique()
+    {
+        String csv = exportCsvService.exporterHistorique(
+                evaluationService.listerHistoriqueAvecNotes());
+
+        // le caractere BOM au debut dit a Excel que le fichier est en UTF-8 (sinon les accents sont cassés)
+        byte[] contenu = ("\uFEFF" + csv).getBytes(StandardCharsets.UTF_8);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"historique-incidents.csv\"")
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .body(contenu);
     }
 
     // F4 : formulaire vide pour un equipement donné (on arrive depuis la fiche equipement)
