@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StationOps — Action impossible</title>
+</head>
+<body>
+<main>
+  <h1>Action impossible</h1>
+
+  <p th:text="${message}">
+    Cette action n’est pas possible dans l’état actuel de l’incident.
+  </p>
+
+  <p>
+    <a th:href="@{/}">Retour à l’accueil</a>
+  </p>
+</main>
+</body>
+</html>
