@@ -1,6 +1,8 @@
 package altn72.tpfilrouge.controleur;
 
 import altn72.tpfilrouge.dto.DeclarationIncidentForm;
+import altn72.tpfilrouge.dto.IncidentDetailDto;
+import altn72.tpfilrouge.dto.ModificationIncidentForm;
 import altn72.tpfilrouge.modele.Incident;
 import altn72.tpfilrouge.securite.UtilisateurConnecte;
 import altn72.tpfilrouge.service.EquipementService;
@@ -88,6 +90,45 @@ public class IncidentControleur {
         model.addAttribute("prestataires", prestataireService.listerPrestataires());
 
         return "incident";
+    }
+
+    // F6 : formulaire pré-rempli avec la description actuelle
+    @GetMapping("/{id}/modifier")
+    public String afficherModification(
+            @PathVariable("id") Integer id,
+            @AuthenticationPrincipal UtilisateurConnecte utilisateur,
+            Model model)
+    {
+        IncidentDetailDto incident = incidentService.consulterDetail(id);
+
+        ModificationIncidentForm formulaire = new ModificationIncidentForm();
+        formulaire.setDescription(incident.description());
+
+        model.addAttribute("formulaire", formulaire);
+        model.addAttribute("incident", incident);
+        model.addAttribute("utilisateurConnecte", utilisateur);
+        return "incidentModifier";
+    }
+
+    // F6 : si l'incident est résolu entre temps, le modele refuse et on tombe sur la page 409
+    @PostMapping("/{id}/modifier")
+    public String modifierDescription(
+            @PathVariable("id") Integer id,
+            @Valid @ModelAttribute("formulaire") ModificationIncidentForm formulaire,
+            BindingResult erreurs,
+            @AuthenticationPrincipal UtilisateurConnecte utilisateur,
+            Model model)
+    {
+        if (erreurs.hasErrors())
+        {
+            model.addAttribute("incident", incidentService.consulterDetail(id));
+            model.addAttribute("utilisateurConnecte", utilisateur);
+            return "incidentModifier";
+        }
+
+        incidentService.modifierDescription(id, formulaire.getDescription());
+
+        return "redirect:/incidents/" + id;
     }
 
     // F7 : affecter ou reaffecter, reservé au responsable (voir ConfigurationSecurite)
