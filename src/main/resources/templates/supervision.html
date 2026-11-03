@@ -12,7 +12,11 @@
 
 <main>
   <h1>Supervision des incidents actifs</h1>
-
+  <p>
+    <a th:href="@{/supervision/statistiques}">
+      Consulter les statistiques du réseau
+    </a>
+  </p>
   <form method="get" th:action="@{/supervision}">
     <label for="stationId">Station</label>
     <select id="stationId" name="stationId">

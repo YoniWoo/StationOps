@@ -51,4 +51,17 @@ public interface IncidentRepository
             + "ORDER BY i.ouvertLe ASC, i.id ASC")
     List<Incident> trouverIncidentsActifs(
             @Param("statutExclu") StatutIncident statutExclu);
+
+    @Query("""
+        SELECT new altn72.tpfilrouge.dto.IncidentsParStationDto(
+            s.id, s.nom, COUNT(i))
+        FROM Incident i
+        JOIN i.equipement e
+        JOIN e.station s
+        WHERE i.statut <> :statutExclu
+        GROUP BY s.id, s.nom
+        ORDER BY COUNT(i) DESC, s.nom ASC, s.id ASC
+        """)
+    List<altn72.tpfilrouge.dto.IncidentsParStationDto> compterActifsParStation(
+            @Param("statutExclu") StatutIncident statutExclu);
 }

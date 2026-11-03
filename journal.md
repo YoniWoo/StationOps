@@ -595,7 +595,70 @@ Les tests correspondants ont été adaptés ; leur nouvelle exécution reste à 
 
 ## LOT ALPHA
 
-TBD
+### Visualisation des données — Yoni ATLAN
+
+#### Objectif
+
+Compléter la supervision avec une analyse de la répartition des pannes
+et des délais de résolution.
+
+#### Réalisation
+
+Une page /supervision/statistiques présente deux graphiques :
+- Le nombre d’incidents actifs par station, classé par nombre décroissant.
+- Le délai moyen de résolution par type d’équipement, accompagné
+  du nombre d’incidents utilisés pour calculer la moyenne.
+
+Les statistiques portent sur l’ensemble du réseau, indépendamment
+des filtres de la supervision.
+
+#### Choix techniques
+
+Le comptage par station utilise une requête JPQL avec GROUP BY et COUNT.
+Aucune requête SQL native supplémentaire n’a été ajoutée.
+
+Les délais sont calculés en Java à partir de l’ouverture et de la résolution
+des incidents résolus, puis regroupés par type d’équipement.
+
+Les graphiques sont construits avec Thymeleaf, HTML et un fichier CSS séparé,
+sans bibliothèque graphique supplémentaire.
+
+L’accès est réservé au responsable par Spring Security.
+
+#### Essais et résultats
+
+Les deux graphiques ont été vérifiés dans le navigateur.
+
+Commande :
+./mvnw -Dtest=StatistiquesServiceTest,IncidentRepositoryTest test
+
+Résultat : 8 tests réussis, aucun échec.
+
+Les nouveaux tests vérifient :
+- Le calcul des moyennes par type et le nombre d’incidents associés.
+- Une liste vide lorsqu’aucun incident n’est résolu.
+- Le regroupement des incidents actifs par station, leur classement
+  et l’exclusion des incidents résolus.
+
+Une erreur d’affichage liée à la correspondance entre le DTO et le template
+a été corrigée.
+
+Un accès direct à la page avec le profil agent retourne HTTP 403.
+
+#### Limites
+
+Les stations sans incident actif et les types sans incident résolu
+ne sont pas affichés.
+
+Les graphiques utilisent chacun leur propre échelle.
+La moyenne doit être interprétée avec le nombre d’incidents affiché.
+
+Le calcul des délais charge l’historique des incidents résolus en mémoire.
+Cette approche convient au volume du projet, mais devra être adaptée
+pour un historique important.
+
+Le calcul conserve la limite du modèle LocalDateTime lors des changements
+d’heure. Les statistiques sont actualisées au rechargement de la page.
 
 ## BILAN
 
