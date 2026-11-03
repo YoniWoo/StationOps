@@ -1,5 +1,6 @@
 package altn72.tpfilrouge.service;
 
+import altn72.tpfilrouge.dto.IncidentHistoriqueDto;
 import altn72.tpfilrouge.exception.EvaluationInterditeException;
 import altn72.tpfilrouge.modele.*;
 import altn72.tpfilrouge.repository.EvaluationRepository;
@@ -9,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -104,5 +107,32 @@ public class EvaluationServiceTest {
                 IllegalArgumentException.class,
                 () -> evaluationService.evaluerPrestataire(1, 6, null)
         );
+    }
+
+    @Test
+    void historiqueDonneLaNoteQuandLIncidentEstEvalue()
+    {
+        resoudreAvecPrestataire();
+        Evaluation evaluation = new Evaluation(incident, 4, null, MAINTENANT);
+        when(incidentService.listerHistorique()).thenReturn(List.of(incident));
+        when(evaluationRepository.findByIncidentId(any())).thenReturn(Optional.of(evaluation));
+
+        List<IncidentHistoriqueDto> historique = evaluationService.listerHistoriqueAvecNotes();
+
+        assertEquals(1, historique.size());
+        assertEquals(4, historique.get(0).note());
+        assertEquals("Mobilité Maintenance", historique.get(0).prestataireNom());
+    }
+
+    @Test
+    void historiqueSansEvaluationLaisseLaNoteVide()
+    {
+        resoudreAvecPrestataire();
+        when(incidentService.listerHistorique()).thenReturn(List.of(incident));
+        when(evaluationRepository.findByIncidentId(any())).thenReturn(Optional.empty());
+
+        List<IncidentHistoriqueDto> historique = evaluationService.listerHistoriqueAvecNotes();
+
+        assertNull(historique.get(0).note());
     }
 }

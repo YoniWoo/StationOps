@@ -42,6 +42,18 @@ public class IncidentControleur {
         this.equipementService = equipementService;
     }
 
+    // F9 : accessible aux 2 profils en lecture
+    @GetMapping("/historique")
+    public String afficherHistorique(
+            @AuthenticationPrincipal UtilisateurConnecte utilisateur,
+            Model model)
+    {
+        model.addAttribute("utilisateurConnecte", utilisateur);
+        model.addAttribute("incidents", evaluationService.listerHistoriqueAvecNotes());
+
+        return "historique";
+    }
+
     // F4 : formulaire vide pour un equipement donné (on arrive depuis la fiche equipement)
     @GetMapping("/nouveau")
     public String afficherDeclaration(
