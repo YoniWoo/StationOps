@@ -39,7 +39,7 @@ Le profil `demo` crée les utilisateurs absents, puis initialise les
 données métier dans une transaction si les tables métier sont vides.
 Il ne supprime ni ne remplace les données existantes.
 
-Le jeu initial comprend trois stations, six équipements, un prestataire,
+Le jeu initial comprend trois stations, six équipements, deux prestataires,
 six incidents et une évaluation. Les incidents comprennent quatre
 non affectés, un affecté et un résolu.
 

@@ -2,6 +2,7 @@ package altn72.tpfilrouge.configuration;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -15,6 +16,10 @@ public class ConfigurationSecurite {
                 .authorizeHttpRequests(autorisations -> autorisations
                         .requestMatchers("/login", "/error").permitAll()
                         .requestMatchers("/supervision", "/supervision/**")
+                            .hasRole("RESPONSABLE_EXPLOITATION")
+                        .requestMatchers(HttpMethod.POST,
+                                "/incidents/*/affectation",
+                                "/incidents/*/resolution")
                             .hasRole("RESPONSABLE_EXPLOITATION")
                         .anyRequest().authenticated()
                 )

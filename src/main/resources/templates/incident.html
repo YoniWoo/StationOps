@@ -58,6 +58,30 @@
     <dd th:if="${evaluation == null}">Pas encore évalué</dd>
   </dl>
 
+  <th:block th:if="${incident.resoluLe == null
+                    and utilisateurConnecte.profil.name() == 'RESPONSABLE_EXPLOITATION'}">
+    <h2 th:text="${incident.prestataireNom == null ? 'Affecter un prestataire' : 'Réaffecter à un autre prestataire'}">
+      Affecter un prestataire
+    </h2>
+    <form th:action="@{/incidents/{id}/affectation(id=${incident.id})}" method="post">
+      <label for="prestataireId">Prestataire</label>
+      <select id="prestataireId" name="prestataireId" required>
+        <option th:each="prestataire : ${prestataires}"
+                th:value="${prestataire.id}"
+                th:text="${prestataire.nom}"
+                th:selected="${prestataire.nom == incident.prestataireNom}">
+        </option>
+      </select>
+      <button type="submit">Affecter</button>
+    </form>
+
+    <h2>Résolution</h2>
+    <p>L’heure de résolution est enregistrée au moment de la validation.</p>
+    <form th:action="@{/incidents/{id}/resolution(id=${incident.id})}" method="post">
+      <button type="submit">Déclarer l’incident résolu</button>
+    </form>
+  </th:block>
+
   <p>
     <a th:href="@{/equipements/{id}(id=${incident.equipementId})}">
       Retour à la fiche de l’équipement
