@@ -187,8 +187,7 @@ Vérifications manuelles :
 - Accès responsable autorisé, accès agent refusé avec un statut HTTP 403
   et redirection vers la connexion pour un utilisateur déconnecté.
 
-Le lien vers le détail d’un incident (F5) reste à intégrer :
-J3-05 demeure en attente.
+Chaque ligne de la supervision renvoie vers le détail de l’incident (F5).
 
 ### API REST et non-régression de la sécurité
 
@@ -225,9 +224,67 @@ Les 9 tests de sécurité web passent également.
 
 Les tests utilisent H2 avec annulation des transactions après chaque test.
 Ils ne modifient pas les données MariaDB.
-Les contrôles de droits des futures routes métier restent à vérifier.
+Les droits des pages du cycle de vie des incidents sont testés dans IncidentWebTest.
+
+### Cycle de vie des incidents — F4 à F10
+
+Les règles sont testées à deux niveaux.
+
+Tests unitaires avec Mockito et une horloge fixe (IncidentServiceTest, EvaluationServiceTest, EvaluationTest) :
+- Un incident déclaré démarre sans prestataire et met l’équipement hors service.
+- Un équipement inexistant ou un incident inexistant lève RessourceIntrouvableException.
+- La description d’un incident résolu ne peut plus être modifiée.
+- Un incident peut être affecté puis réaffecté, mais pas une fois résolu.
+- La résolution enregistre l’heure de l’horloge et remet l’équipement en service seulement s’il n’a plus d’incident actif.
+- La durée d’ouverture s’arrête à la résolution.
+- Une évaluation est refusée si l’incident n’est pas résolu, si une évaluation existe déjà ou si la note sort de 1 à 5.
+- L’historique contient la note quand l’incident est évalué.
+
+Tests de repository sur H2 (IncidentRepositoryTest) : historique trié du plus récent au plus ancien, exclusion des incidents actifs, chargement de la station et du prestataire pour la page détail.
+
+Tests HTTP avec MockMvc (IncidentWebTest, 18 tests) :
+- Un incident inexistant affiche la page 404.
+- Résoudre deux fois le même incident ou évaluer un incident non résolu affiche la page 409.
+- Un agent reçoit 403 sur la résolution et sur l’évaluation.
+- Une déclaration avec une description vide réaffiche le formulaire avec un message sous le champ.
+- Les formulaires de déclaration, de modification et d’évaluation redirigent vers le détail après succès.
+- L’historique et l’export CSV sont accessibles aux deux profils.
+
+Commande :
+
+```bash
+./mvnw test
+```
+
+Non couvert : l’affichage visuel des pages, vérifié à la main dans le navigateur.
 
 ## CHOIX TECHNIQUES
+
+### Droits par profil
+
+| N° | Fonctionnalité | Responsable d’exploitation | Agent de terrain |
+|---|---|---|---|
+| F2–F3 | Consulter équipements et fiches | Accès complet | Accès complet |
+| F4 | Déclarer un incident | Accès complet | Accès complet |
+| F5–F6 | Consulter / modifier un incident | Accès complet | Accès complet (modification de la description tant que l’incident n’est pas résolu) |
+| F7 | Affecter ou réaffecter un prestataire | Accès complet | Interdit |
+| F8 | Déclarer un incident résolu | Accès complet | Interdit |
+| F9 | Consulter l’historique | Accès complet | Lecture seule |
+| F10 | Évaluer un prestataire | Accès complet | Lecture seule (la note est visible sur le détail et dans l’historique) |
+| F11 | Tableau de bord | Accès complet | Interdit |
+
+Les restrictions sont appliquées par Spring Security dans ConfigurationSecurite :
+les POST /incidents/*/affectation et /incidents/*/resolution ainsi que /incidents/*/evaluation
+sont réservés au rôle RESPONSABLE_EXPLOITATION. Les boutons sont aussi masqués pour l’agent,
+mais ce n’est qu’un confort : un agent qui envoie la requête à la main reçoit 403.
+
+### Ce qui est modifiable — F6
+
+Seule la description d’un incident est modifiable, par les deux profils, tant que l’incident n’est pas résolu.
+L’agent est souvent celui qui voit la panne sur place, il doit pouvoir préciser sa description.
+L’équipement n’est pas modifiable : un incident déclaré sur le mauvais équipement a déjà mis cet
+équipement hors service, le changer demanderait de recalculer l’état de deux équipements.
+Le statut, le prestataire et les dates ne changent que par les actions dédiées (F7, F8), jamais par un formulaire libre.
 
 ### Authentification et sécurité
 
@@ -262,7 +319,7 @@ Le lien de supervision est masqué pour l’agent. Cette adaptation de l’inter
 
 - Le niveau d’urgence est calculé à partir de l’heure courante et n’est pas stocké comme une couleur en base.
 
-Ces règles sont mises en œuvre dans le modèle et les services existants. La résolution et la cohérence de l’état de l’équipement sont couvertes par les tests. Leur intégration dans les pages du cycle de vie des incidents et la vérification de tous les droits métier restent à terminer.
+Ces règles sont mises en œuvre dans le modèle et les services existants. La résolution et la cohérence de l’état de l’équipement sont couvertes par les tests. Elles sont accessibles dans les pages du cycle de vie des incidents (F4 à F10).
 
 ### Protection de la cohérence métier
 
@@ -280,14 +337,16 @@ sa date ne peut pas précéder la résolution.
 Des exceptions personnalisées signalent les transitions et
 évaluations interdites. Le gestionnaire REST traduit les ressources
 absentes en 404 et les transitions interdites en 409. Les paramètres
-de type invalide produisent une réponse 400. La gestion des erreurs
-des futures pages et routes d’évaluation reste à compléter.
+de type invalide produisent une réponse 400. Côté pages web,
+GestionErreurWeb affiche la page 404 pour une ressource introuvable et une page
+« Action impossible » avec le statut 409 pour une transition ou une évaluation interdite,
+avec le message en français de l’exception et sans trace technique.
 
 Les services assurent les opérations portant sur plusieurs entités,
 notamment la déclaration et la résolution d’un incident. Les droits
 d’accès à la supervision et à la résolution REST sont appliqués par
-Spring Security. Les contrôles métier liés au déclarant et au statut
-pour la modification des descriptions restent à vérifier.
+Spring Security. La modification de la description est ouverte
+aux deux profils tant que l’incident n’est pas résolu (voir « Ce qui est modifiable — F6 »).
 
 ### Principes SOLID
 
@@ -596,6 +655,42 @@ Les tests correspondants ont été adaptés ; leur nouvelle exécution reste à 
 ## LOT ALPHA
 
 TBD
+
+### Export CSV de l’historique — Tim HRDY
+
+#### Objectif
+
+Permettre au responsable de récupérer l’historique des incidents résolus
+dans un tableur, par exemple pour un bilan mensuel avec un prestataire.
+
+#### Réalisation
+
+Un lien « Télécharger l’historique (CSV) » sur la page historique appelle
+GET /incidents/historique/export. Le fichier contient une ligne par incident
+résolu, dans le même ordre que la page (plus récent d’abord), avec la station,
+l’équipement, la description, les dates d’ouverture et de résolution,
+le prestataire et la note.
+
+#### Choix techniques
+
+- Le séparateur est le point-virgule, que Excel en français ouvre directement en colonnes.
+- Une valeur qui contient un point-virgule ou des guillemets est mise entre guillemets,
+  et les guillemets intérieurs sont doublés, comme le prévoit le format CSV.
+- Le fichier commence par un BOM UTF-8 pour que Excel affiche correctement les accents.
+- La construction du fichier est dans ExportCsvService, le contrôleur ne fait que l’envoyer.
+- Le contrôleur renvoie un ResponseEntity car il faut régler deux en-têtes :
+  le type text/csv et le nom du fichier téléchargé (Content-Disposition).
+- Aucune bibliothèque ajoutée : le format reste simple et un StringBuilder suffit.
+
+#### Essais et résultats
+
+ExportCsvServiceTest vérifie l’en-tête, le format des dates et l’échappement
+d’une description contenant un point-virgule et des guillemets.
+IncidentWebTest vérifie que le téléchargement renvoie un fichier text/csv.
+
+#### Limites
+
+L’export reprend tout l’historique, sans filtre par période ou par station.
 
 ## BILAN
 
