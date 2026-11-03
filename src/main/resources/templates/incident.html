@@ -61,7 +61,14 @@
       <span th:if="${evaluation.commentaire != null}"
             th:text="|— ${evaluation.commentaire}|"></span>
     </dd>
-    <dd th:if="${evaluation == null}">Pas encore évalué</dd>
+    <dd th:if="${evaluation == null}">
+      Pas encore évalué
+      <a th:if="${incident.resoluLe != null and incident.prestataireNom != null
+                  and utilisateurConnecte.profil.name() == 'RESPONSABLE_EXPLOITATION'}"
+         th:href="@{/incidents/{id}/evaluation(id=${incident.id})}">
+        — évaluer le prestataire
+      </a>
+    </dd>
   </dl>
 
   <th:block th:if="${incident.resoluLe == null

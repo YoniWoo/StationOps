@@ -1,6 +1,7 @@
 package altn72.tpfilrouge.controleur;
 
 import altn72.tpfilrouge.dto.DeclarationIncidentForm;
+import altn72.tpfilrouge.dto.EvaluationForm;
 import altn72.tpfilrouge.dto.IncidentDetailDto;
 import altn72.tpfilrouge.dto.ModificationIncidentForm;
 import altn72.tpfilrouge.modele.Incident;
@@ -162,6 +163,50 @@ public class IncidentControleur {
         incidentService.resoudreIncident(id);
 
         return "redirect:/incidents/" + id;
+    }
+
+    // F10 : formulaire d'evaluation, reservé au responsable
+    @GetMapping("/{id}/evaluation")
+    public String afficherEvaluation(
+            @PathVariable("id") Integer id,
+            @AuthenticationPrincipal UtilisateurConnecte utilisateur,
+            Model model)
+    {
+        model.addAttribute("formulaire", new EvaluationForm());
+        return afficherFormulaireEvaluation(id, utilisateur, model);
+    }
+
+    // F10 : les regles (résolu, prestataire, une seule evaluation) sont verifiées dans EvaluationService
+    @PostMapping("/{id}/evaluation")
+    public String evaluerPrestataire(
+            @PathVariable("id") Integer id,
+            @Valid @ModelAttribute("formulaire") EvaluationForm formulaire,
+            BindingResult erreurs,
+            @AuthenticationPrincipal UtilisateurConnecte utilisateur,
+            Model model)
+    {
+        if (erreurs.hasErrors())
+        {
+            return afficherFormulaireEvaluation(id, utilisateur, model);
+        }
+
+        evaluationService.evaluerPrestataire(
+                id,
+                formulaire.getNote(),
+                formulaire.getCommentaire());
+
+        return "redirect:/incidents/" + id;
+    }
+
+    private String afficherFormulaireEvaluation(
+            Integer incidentId,
+            UtilisateurConnecte utilisateur,
+            Model model)
+    {
+        model.addAttribute("utilisateurConnecte", utilisateur);
+        model.addAttribute("incident", incidentService.consulterDetail(incidentId));
+
+        return "incidentEvaluation";
     }
 
     private String afficherFormulaireDeclaration(
