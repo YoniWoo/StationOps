@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StationOps — Déclarer un incident</title>
+</head>
+<body>
+<header th:replace="~{fragments/entete
+            :: entete(${utilisateurConnecte})}"></header>
+
+<main>
+  <h1>Déclarer un incident</h1>
+
+  <p>
+    Équipement :
+    <strong th:text="|${equipement.libelle} (${equipement.reference})|"></strong>,
+    station <span th:text="${equipement.stationNom}"></span>
+  </p>
+
+  <form th:action="@{/incidents/nouveau}" th:object="${formulaire}" method="post">
+    <input type="hidden" th:field="*{equipementId}">
+
+    <p>
+      <label for="description">Description de la panne</label><br>
+      <textarea id="description" th:field="*{description}"
+                rows="5" cols="60" maxlength="2000"></textarea>
+    </p>
+    <p th:if="${#fields.hasErrors('description')}"
+       th:errors="*{description}" role="alert"></p>
+
+    <button type="submit">Déclarer l’incident</button>
+  </form>
+
+  <p>
+    <a th:href="@{/equipements/{id}(id=${equipement.id})}">Annuler</a>
+  </p>
+</main>
+</body>
+</html>
