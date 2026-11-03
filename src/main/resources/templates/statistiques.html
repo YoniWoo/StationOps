@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StationOps — Statistiques</title>
+  <link rel="stylesheet" th:href="@{/css/statistiques.css}">
+</head>
+<body>
+<header th:replace="~{fragments/entete
+        :: entete(${utilisateurConnecte})}"></header>
+
+<main class="statistiques">
+  <h1>Statistiques du réseau</h1>
+
+  <p>
+    Ces graphiques portent sur l’ensemble du réseau,
+    indépendamment des filtres du tableau de supervision.
+  </p>
+
+  <section class="graphique" aria-labelledby="titre-stations">
+    <h2 id="titre-stations">Incidents actifs par station</h2>
+
+    <p>Seules les stations ayant au moins un incident actif apparaissent.</p>
+
+    <p th:if="${#lists.isEmpty(incidentsParStation)}">
+      Aucun incident actif sur le réseau.
+    </p>
+
+    <ul class="barres"
+        th:unless="${#lists.isEmpty(incidentsParStation)}">
+
+      <li class="ligne"
+          th:each="station : ${incidentsParStation}">
+
+                <span class="libelle"
+                      th:text="${station.stationNom}"></span>
+
+        <div class="piste" aria-hidden="true">
+          <div class="barre barre-incidents"
+               th:style="|width: ${maximumIncidents > 0
+                             ? station.nombre * 100.0 / maximumIncidents
+                             : 0}%;|">
+          </div>
+        </div>
+
+        <span class="valeur"
+              th:text="|${station.nombre} incident(s)|"></span>
+      </li>
+    </ul>
+  </section>
+
+  <section class="graphique" aria-labelledby="titre-delais">
+    <h2 id="titre-delais">
+      Délai moyen de résolution par type d’équipement
+    </h2>
+
+    <p>
+      Moyenne du temps écoulé entre l’ouverture et la résolution,
+      calculée uniquement sur les incidents résolus.
+      Les types sans incident résolu ne sont pas affichés.
+    </p>
+
+    <p th:if="${#lists.isEmpty(delaisParType)}">
+      Aucun incident résolu : les délais ne peuvent pas encore être calculés.
+    </p>
+
+    <ul class="barres"
+        th:unless="${#lists.isEmpty(delaisParType)}">
+
+      <li class="ligne ligne-delai"
+          th:each="delai : ${delaisParType}">
+
+                <span class="libelle"
+                      th:text="${#strings.replace(
+                          delai.type.name(), '_', ' ')}"></span>
+
+        <div class="piste" aria-hidden="true">
+          <div class="barre barre-delais"
+               th:style="|width: ${maximumDelai > 0
+                             ? delai.moyenneHeures * 100.0 / maximumDelai
+                             : 0}%;|">
+          </div>
+        </div>
+
+        <span class="valeur">
+          <span th:text="${#numbers.formatDecimal(delai.moyenneHeures, 1, 1)}"></span> h
+            <small th:text="|${delai.nombreIncidents} incident(s)|"></small>
+        </span>
+      </li>
+    </ul>
+  </section>
+
+  <p>
+    <a th:href="@{/supervision}">Retour à la supervision</a>
+  </p>
+</main>
+</body>
+</html>
