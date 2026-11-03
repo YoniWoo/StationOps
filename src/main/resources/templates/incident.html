@@ -12,6 +12,12 @@
 <main>
   <h1 th:text="|Incident ${incident.id}|">Incident</h1>
 
+  <p th:if="${incident.resoluLe == null}">
+    <a th:href="@{/incidents/{id}/modifier(id=${incident.id})}">
+      Modifier la description
+    </a>
+  </p>
+
   <dl>
     <dt>Description</dt>
     <dd th:text="${incident.description}"></dd>
