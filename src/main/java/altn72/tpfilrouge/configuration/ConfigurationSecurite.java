@@ -21,6 +21,8 @@ public class ConfigurationSecurite {
                                 "/incidents/*/affectation",
                                 "/incidents/*/resolution")
                             .hasRole("RESPONSABLE_EXPLOITATION")
+                        .requestMatchers("/incidents/*/evaluation")
+                            .hasRole("RESPONSABLE_EXPLOITATION")
                         .anyRequest().authenticated()
                 )
                 .formLogin(connexion -> connexion
