@@ -13,6 +13,10 @@
   <h1>Historique des incidents résolus</h1>
   <p>Du plus récent au plus ancien, selon la date de résolution.</p>
 
+  <p th:unless="${#lists.isEmpty(incidents)}">
+    <a th:href="@{/incidents/historique/export}">Télécharger l’historique (CSV)</a>
+  </p>
+
   <p th:if="${#lists.isEmpty(incidents)}">
     Aucun incident résolu pour le moment.
   </p>

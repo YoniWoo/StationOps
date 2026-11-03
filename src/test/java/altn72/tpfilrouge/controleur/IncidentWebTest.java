@@ -251,4 +251,14 @@ class IncidentWebTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("incidentEvaluation"));
     }
+
+    @Test
+    void lExportCsvSeTelecharge() throws Exception
+    {
+        mockMvc.perform(get("/incidents/historique/export").with(user(agent)))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition",
+                        containsString("historique-incidents.csv")))
+                .andExpect(content().contentTypeCompatibleWith("text/csv"));
+    }
 }
