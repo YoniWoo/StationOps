@@ -1,13 +1,19 @@
 package altn72.tpfilrouge.controleur;
 
+import altn72.tpfilrouge.dto.DeclarationIncidentForm;
+import altn72.tpfilrouge.modele.Incident;
 import altn72.tpfilrouge.securite.UtilisateurConnecte;
+import altn72.tpfilrouge.service.EquipementService;
 import altn72.tpfilrouge.service.EvaluationService;
 import altn72.tpfilrouge.service.IncidentService;
 import altn72.tpfilrouge.service.PrestataireService;
+import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,15 +26,53 @@ public class IncidentControleur {
     private final IncidentService incidentService;
     private final EvaluationService evaluationService;
     private final PrestataireService prestataireService;
+    private final EquipementService equipementService;
 
     public IncidentControleur(
             IncidentService incidentService,
             EvaluationService evaluationService,
-            PrestataireService prestataireService)
+            PrestataireService prestataireService,
+            EquipementService equipementService)
     {
         this.incidentService = incidentService;
         this.evaluationService = evaluationService;
         this.prestataireService = prestataireService;
+        this.equipementService = equipementService;
+    }
+
+    // F4 : formulaire vide pour un equipement donné (on arrive depuis la fiche equipement)
+    @GetMapping("/nouveau")
+    public String afficherDeclaration(
+            @RequestParam("equipementId") Integer equipementId,
+            @AuthenticationPrincipal UtilisateurConnecte utilisateur,
+            Model model)
+    {
+        DeclarationIncidentForm formulaire = new DeclarationIncidentForm();
+        formulaire.setEquipementId(equipementId);
+
+        model.addAttribute("formulaire", formulaire);
+        return afficherFormulaireDeclaration(equipementId, utilisateur, model);
+    }
+
+    // F4 : si un champ est pas valide on reaffiche la meme page avec les messages
+    @PostMapping("/nouveau")
+    public String declarerIncident(
+            @Valid @ModelAttribute("formulaire") DeclarationIncidentForm formulaire,
+            BindingResult erreurs,
+            @AuthenticationPrincipal UtilisateurConnecte utilisateur,
+            Model model)
+    {
+        if (erreurs.hasErrors())
+        {
+            return afficherFormulaireDeclaration(formulaire.getEquipementId(), utilisateur, model);
+        }
+
+        Incident incident = incidentService.declarerIncident(
+                formulaire.getEquipementId(),
+                formulaire.getDescription(),
+                utilisateur.getId());
+
+        return "redirect:/incidents/" + incident.getId();
     }
 
     // F5 : detail d'un incident, 404 si l'id existe pas (voir GestionErreurWeb)
@@ -65,5 +109,16 @@ public class IncidentControleur {
         incidentService.resoudreIncident(id);
 
         return "redirect:/incidents/" + id;
+    }
+
+    private String afficherFormulaireDeclaration(
+            Integer equipementId,
+            UtilisateurConnecte utilisateur,
+            Model model)
+    {
+        model.addAttribute("utilisateurConnecte", utilisateur);
+        model.addAttribute("equipement", equipementService.consulterFiche(equipementId));
+
+        return "incidentNouveau";
     }
 }
