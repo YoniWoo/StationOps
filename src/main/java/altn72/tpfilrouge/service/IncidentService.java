@@ -29,6 +29,9 @@ public class IncidentService
     private final UtilisateurRepository utilisateurRepository;
     private final PrestataireRepository prestataireRepository;
 
+    // pour la couleur de la page detail, les seuils 48 h / 72 h restent a un seul endroit
+    private final CalculUrgenceService calculUrgenceService;
+
     // horloge injectée pour pouvoir fixer l'heure dans les tests
     private final Clock horloge;
 
@@ -37,12 +40,14 @@ public class IncidentService
             EquipementRepository equipementRepository,
             UtilisateurRepository utilisateurRepository,
             PrestataireRepository prestataireRepository,
+            CalculUrgenceService calculUrgenceService,
             Clock horloge)
     {
         this.incidentRepository = incidentRepository;
         this.equipementRepository = equipementRepository;
         this.utilisateurRepository = utilisateurRepository;
         this.prestataireRepository = prestataireRepository;
+        this.calculUrgenceService = calculUrgenceService;
         this.horloge = horloge;
     }
 
@@ -95,7 +100,8 @@ public class IncidentService
                 incident.getEquipement().getStation().getNom(),
                 prestataireNom,
                 duree.toHours(),
-                duree.toMinutesPart());
+                duree.toMinutesPart(),
+                calculUrgenceService.calculer(incident));
     }
 
     // F4 : l'incident est cree sans prestataire (RG1) et l'equipement passe hors service
