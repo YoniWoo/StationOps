@@ -55,8 +55,8 @@ La documentation de l’API est sur http://localhost:8080/swagger-ui.html.
 
 - Les dates de démonstration sont calculées au premier démarrage et vieillissent :
   après quelques jours, tous les incidents non affectés deviennent rouges.
-  Pour retrouver les cas 47 h, 48 h et 72 h, il faut vider les tables métier
-  puis redémarrer l’application.
+  Pour retrouver les cas 47 h, 48 h et 72 h, il suffit de relancer `db/schema.sql`
+  puis de redémarrer l’application avec le profil `demo`.
 - En production, le driver MariaDB se connecte à MySQL 8.4 : Hibernate affiche
   un avertissement de version (HHH000511), sans effet sur le fonctionnement.
 - Les dates utilisent LocalDateTime, sans fuseau : le changement d’heure
@@ -65,7 +65,8 @@ La documentation de l’API est sur http://localhost:8080/swagger-ui.html.
 ### Initialisation de la base
 
 1. Démarrer MariaDB.
-2. Exécuter le fichier `db/schema.sql`.
+2. Exécuter le fichier `db/schema.sql`. Il supprime la base `stationops` si elle
+   existe puis la recrée vide : relancer le script remet tout à zéro en quelques secondes.
 3. Configurer les variables DB_URL, DB_USERNAME et DB_PASSWORD.
 4. Pour charger la démonstration, activer le profil Spring `demo`
    et renseigner DEMO_RESPONSABLE_PASSWORD et DEMO_AGENT_PASSWORD.

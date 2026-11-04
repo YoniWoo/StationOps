@@ -2,8 +2,6 @@ package altn72.tpfilrouge.modele;
 
 import jakarta.persistence.*;
 
-import java.lang.reflect.Type;
-
 @Entity
 @Table(name = "equipements")
 public class Equipement {
