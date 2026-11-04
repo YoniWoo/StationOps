@@ -15,6 +15,8 @@ public class ConfigurationSecurite {
         http
                 .authorizeHttpRequests(autorisations -> autorisations
                         .requestMatchers("/login", "/error").permitAll()
+                        // la page de connexion a besoin du css et des polices avant d'etre connecté
+                        .requestMatchers("/css/**", "/js/**", "/fonts/**").permitAll()
                         .requestMatchers("/supervision", "/supervision/**")
                             .hasRole("RESPONSABLE_EXPLOITATION")
                         .requestMatchers(HttpMethod.POST,

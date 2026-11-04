@@ -50,6 +50,7 @@ public class IncidentServiceTest {
                 equipementRepository,
                 utilisateurRepository,
                 prestataireRepository,
+                new CalculUrgenceService(horloge),
                 horloge);
 
         equipement = new Equipement(
@@ -246,6 +247,7 @@ public class IncidentServiceTest {
         assertEquals(47, detail.dureeHeures());
         assertEquals(30, detail.dureeMinutes());
         assertNull(detail.prestataireNom());
+        assertEquals(NiveauUrgence.VERT, detail.urgence());
     }
 
     @Test
