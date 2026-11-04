@@ -1,40 +1,44 @@
 <!DOCTYPE html>
 <html lang="fr" xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>StationOps — Déclarer un incident</title>
-</head>
-<body>
-<header th:replace="~{fragments/entete
-            :: entete(${utilisateurConnecte})}"></header>
+<head th:replace="~{fragments/entete :: tete('Déclarer un incident')}"></head>
+<body class="app">
+<aside th:replace="~{fragments/entete :: menu(${utilisateurConnecte}, 'stations')}"></aside>
 
-<main>
-  <h1>Déclarer un incident</h1>
+<main class="contenu">
+  <header th:replace="~{fragments/entete :: barre(${utilisateurConnecte}, 'Déclarer un incident')}"></header>
 
-  <p>
-    Équipement :
-    <strong th:text="|${equipement.libelle} (${equipement.reference})|"></strong>,
-    station <span th:text="${equipement.stationNom}"></span>
-  </p>
+  <div class="entree formulaire-page">
+    <div class="entete-page">
+      <div>
+        <h1>Déclarer un incident</h1>
+        <p class="sous-titre">
+          <span th:text="${equipement.libelle}"></span>
+          <span class="mono discret" th:text="${equipement.reference}"></span>
+          <span class="discret" th:text="| · ${equipement.stationNom}|"></span>
+        </p>
+      </div>
+    </div>
 
-  <form th:action="@{/incidents/nouveau}" th:object="${formulaire}" method="post">
-    <input type="hidden" th:field="*{equipementId}">
+    <section class="carte">
+      <form class="formulaire" th:action="@{/incidents/nouveau}" th:object="${formulaire}" method="post">
+        <input type="hidden" th:field="*{equipementId}">
 
-    <p>
-      <label for="description">Description de la panne</label><br>
-      <textarea id="description" th:field="*{description}"
-                rows="5" cols="60" maxlength="2000"></textarea>
-    </p>
-    <p th:if="${#fields.hasErrors('description')}"
-       th:errors="*{description}" role="alert"></p>
+        <label for="description">Description de la panne
+          <textarea class="champ champ-bloc" id="description" th:field="*{description}"
+                    rows="5" maxlength="2000"></textarea>
+          <span class="erreur-champ" th:if="${#fields.hasErrors('description')}"
+                th:errors="*{description}" role="alert"></span>
+        </label>
 
-    <button type="submit">Déclarer l’incident</button>
-  </form>
+        <p class="aide">L’équipement passe hors service dès la déclaration</p>
 
-  <p>
-    <a th:href="@{/equipements/{id}(id=${equipement.id})}">Annuler</a>
-  </p>
+        <div class="actions">
+          <button class="btn btn-principal" type="submit">Déclarer l’incident</button>
+          <a class="btn" th:href="@{/equipements/{id}(id=${equipement.id})}">Annuler</a>
+        </div>
+      </form>
+    </section>
+  </div>
 </main>
 </body>
 </html>

@@ -1,74 +1,87 @@
 <!DOCTYPE html>
 <html lang="fr" xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>StationOps — Fiche équipement</title>
-</head>
-<body>
-<header th:replace="~{fragments/entete
-            :: entete(${utilisateurConnecte})}"></header>
-<main>
-  <h1 th:text="${fiche.libelle}">Équipement</h1>
-  <dl>
-    <dt>Référence</dt>
-    <dd th:text="${fiche.reference}"></dd>
-    <dt>Station</dt>
-    <dd th:text="${fiche.stationNom}"></dd>
-    <dt>Type</dt>
-    <dd th:text="${fiche.type}"></dd>
-    <dt>État</dt>
-    <dd th:text="${fiche.etat}"></dd>
-  </dl>
-  <p>
-    <a th:href="@{/incidents/nouveau(equipementId=${fiche.id})}">
-      Déclarer un incident sur cet équipement
-    </a>
-  </p>
+<head th:replace="~{fragments/entete :: tete(${fiche.libelle})}"></head>
+<body class="app">
+<aside th:replace="~{fragments/entete :: menu(${utilisateurConnecte}, 'stations')}"></aside>
 
-  <h2>Incidents en cours et passés</h2>
-  <p th:if="${#lists.isEmpty(fiche.incidents)}">
-    Aucun incident enregistré pour cet équipement.
-  </p>
-  <table th:unless="${#lists.isEmpty(fiche.incidents)}">
-    <thead>
-    <tr>
-      <th scope="col">Numéro</th>
-      <th scope="col">Description</th>
-      <th scope="col">Statut</th>
-      <th scope="col">Ouverture</th>
-      <th scope="col">Résolution</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="incident : ${fiche.incidents}">
-      <td>
-        <a th:href="@{/incidents/{id}(id=${incident.id})}"
-           th:text="${incident.id}"></a>
-      </td>
-      <td th:text="${incident.description}"></td>
-      <td th:text="${incident.statut}"></td>
+<main class="contenu">
+  <header th:replace="~{fragments/entete :: barre(${utilisateurConnecte}, ${fiche.stationNom})}"></header>
 
-      <td th:text="${#temporals.format(
-                            incident.ouvertLe, 'dd/MM/yyyy HH:mm')}">
-      </td>
+  <div class="entree">
+    <div class="entete-page">
+      <div>
+        <h1 th:text="${fiche.libelle}">Équipement</h1>
+        <p class="sous-titre">
+          <span class="mono" th:text="${fiche.reference}"></span>
+          <span class="discret" th:text="| · station ${fiche.stationNom}|"></span>
+        </p>
+      </div>
+      <div class="actions">
+        <a class="btn" th:href="@{/stations/{id}/equipements(id=${fiche.stationId})}">Équipements de la station</a>
+        <a class="btn btn-principal" th:href="@{/incidents/nouveau(equipementId=${fiche.id})}">Déclarer un incident</a>
+      </div>
+    </div>
 
-      <td>
-        <span th:if="${incident.resoluLe != null}"
-              th:text="${#temporals.format(incident.resoluLe, 'dd/MM/yyyy HH:mm')}">
-        </span>
-        <span th:if="${incident.resoluLe == null}">
-            Non résolu
-        </span>
-      </td>
-    </tr>
-    </tbody>
-  </table>
-  <p>
-    <a th:href="@{/stations/{id}/equipements(id=${fiche.stationId})}">
-      Retour aux équipements de la station
-    </a>
-  </p>
+    <div class="grille-principale">
+      <section class="carte">
+        <div class="carte-entete">
+          <h2>Incidents en cours et passés</h2>
+          <span class="discret">du plus récent au plus ancien</span>
+        </div>
+
+        <p class="info" th:if="${#lists.isEmpty(fiche.incidents)}">
+          Aucun incident enregistré pour cet équipement
+        </p>
+
+        <table class="tableau" th:unless="${#lists.isEmpty(fiche.incidents)}">
+          <thead>
+          <tr>
+            <th scope="col">Incident</th>
+            <th scope="col">Statut</th>
+            <th scope="col" class="cacher-mobile">Ouverture</th>
+            <th scope="col" class="cacher-mobile">Résolution</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="incident : ${fiche.incidents}">
+            <td class="large">
+              <a class="incident-titre" th:href="@{/incidents/{id}(id=${incident.id})}"
+                 th:text="${incident.description}"></a>
+              <p class="incident-meta" th:text="|n° ${incident.id}|"></p>
+            </td>
+            <td th:switch="${incident.statut.name()}">
+              <span th:case="'NON_AFFECTE'" class="statut statut-orange">Sans prestataire</span>
+              <span th:case="'AFFECTE'" class="statut statut-affecte">Affecté</span>
+              <span th:case="'RESOLU'" class="statut statut-resolu">Résolu</span>
+            </td>
+            <td class="cacher-mobile chiffres"
+                th:text="${#temporals.format(incident.ouvertLe, 'dd/MM/yyyy HH:mm')}"></td>
+            <td class="cacher-mobile chiffres" th:classappend="${incident.resoluLe == null} ? 'discret'"
+                th:text="${incident.resoluLe != null
+                          ? #temporals.format(incident.resoluLe, 'dd/MM/yyyy HH:mm') : 'En cours'}"></td>
+          </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="carte">
+        <div class="carte-entete"><h2>Équipement</h2></div>
+        <dl class="infos">
+          <dt>Référence</dt>
+          <dd class="mono" th:text="${fiche.reference}"></dd>
+          <dt>Station</dt>
+          <dd th:text="${fiche.stationNom}"></dd>
+          <dt>Type</dt>
+          <dd th:text="${#strings.capitalize(#strings.toLowerCase(#strings.replace(fiche.type.name(), '_', ' ')))}"></dd>
+          <dt>État</dt>
+          <dd>
+            <span th:if="${fiche.etat.name() == 'EN_SERVICE'}" class="statut statut-vert">En service</span>
+            <span th:if="${fiche.etat.name() == 'HORS_SERVICE'}" class="statut statut-rouge">Hors service</span>
+          </dd>
+        </dl>
+      </section>
+    </div>
+  </div>
 </main>
 </body>
 </html>

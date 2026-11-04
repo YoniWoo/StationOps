@@ -3,19 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>StationOps — Action impossible</title>
+  <title>Action impossible · StationOps</title>
+  <link rel="stylesheet" th:href="@{/css/stationops.css}">
 </head>
 <body>
-<main>
-  <h1>Action impossible</h1>
-
-  <p th:text="${message}">
-    Cette action n’est pas possible dans l’état actuel de l’incident.
-  </p>
-
-  <p>
-    <a th:href="@{/}">Retour à l’accueil</a>
-  </p>
+<main class="page-connexion">
+  <div class="carte carte-connexion entree">
+    <a class="logo" th:href="@{/}"><span class="logo-panneau">S</span>StationOps</a>
+    <p class="discret chiffres">Erreur 409</p>
+    <h1 style="margin-top: 8px">Action impossible</h1>
+    <p class="sous-titre" th:text="${message}">Cette action n’est pas possible dans l’état actuel de l’incident</p>
+    <p class="pied-page">
+      <a class="btn" th:href="@{/}">Retour à l’accueil</a>
+    </p>
+  </div>
 </main>
 </body>
 </html>

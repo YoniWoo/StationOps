@@ -1,56 +1,58 @@
 <!DOCTYPE html>
 <html lang="fr" xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>StationOps — Historique des incidents résolus</title>
-</head>
-<body>
-<header th:replace="~{fragments/entete
-            :: entete(${utilisateurConnecte})}"></header>
+<head th:replace="~{fragments/entete :: tete('Historique')}"></head>
+<body class="app">
+<aside th:replace="~{fragments/entete :: menu(${utilisateurConnecte}, 'historique')}"></aside>
 
-<main>
-  <h1>Historique des incidents résolus</h1>
-  <p>Du plus récent au plus ancien, selon la date de résolution.</p>
+<main class="contenu">
+  <header th:replace="~{fragments/entete :: barre(${utilisateurConnecte}, 'Historique')}"></header>
 
-  <p th:unless="${#lists.isEmpty(incidents)}">
-    <a th:href="@{/incidents/historique/export}">Télécharger l’historique (CSV)</a>
-  </p>
+  <div class="entree">
+    <div class="entete-page">
+      <div>
+        <h1>Incidents résolus</h1>
+        <p class="sous-titre">Du plus récent au plus ancien, selon la date de résolution</p>
+      </div>
+      <div class="actions" th:unless="${#lists.isEmpty(incidents)}">
+        <a class="btn" th:href="@{/incidents/historique/export}">Télécharger l’historique (CSV)</a>
+      </div>
+    </div>
 
-  <p th:if="${#lists.isEmpty(incidents)}">
-    Aucun incident résolu pour le moment.
-  </p>
+    <section class="carte">
+      <p class="info" th:if="${#lists.isEmpty(incidents)}">
+        Aucun incident résolu pour le moment
+      </p>
 
-  <table th:unless="${#lists.isEmpty(incidents)}">
-    <thead>
-    <tr>
-      <th scope="col">Incident</th>
-      <th scope="col">Station</th>
-      <th scope="col">Équipement</th>
-      <th scope="col">Description</th>
-      <th scope="col">Ouverture</th>
-      <th scope="col">Résolution</th>
-      <th scope="col">Prestataire</th>
-      <th scope="col">Note</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="incident : ${incidents}">
-      <td>
-        <a th:href="@{/incidents/{id}(id=${incident.id})}"
-           th:text="${incident.id}"></a>
-      </td>
-      <td th:text="${incident.stationNom}"></td>
-      <td th:text="${incident.equipementReference}"></td>
-      <td th:text="${incident.description}"></td>
-      <td th:text="${#temporals.format(incident.ouvertLe, 'dd/MM/yyyy HH:mm')}"></td>
-      <td th:text="${#temporals.format(incident.resoluLe, 'dd/MM/yyyy HH:mm')}"></td>
-      <td th:text="${incident.prestataireNom != null
-                    ? incident.prestataireNom : 'Intervention interne'}"></td>
-      <td th:text="${incident.note != null ? incident.note + ' / 5' : 'Non évalué'}"></td>
-    </tr>
-    </tbody>
-  </table>
+      <table class="tableau" th:unless="${#lists.isEmpty(incidents)}">
+        <thead>
+        <tr>
+          <th scope="col">Incident</th>
+          <th scope="col" class="cacher-mobile">Équipement</th>
+          <th scope="col" class="cacher-mobile">Ouverture</th>
+          <th scope="col">Résolution</th>
+          <th scope="col" class="cacher-mobile">Prestataire</th>
+          <th scope="col" class="droite">Note</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="incident : ${incidents}">
+          <td class="large">
+            <a class="incident-titre" th:href="@{/incidents/{id}(id=${incident.id})}"
+               th:text="${incident.description}"></a>
+            <p class="incident-meta" th:text="|${incident.stationNom} · n° ${incident.id}|"></p>
+          </td>
+          <td class="cacher-mobile mono" th:text="${incident.equipementReference}"></td>
+          <td class="cacher-mobile chiffres" th:text="${#temporals.format(incident.ouvertLe, 'dd/MM/yyyy HH:mm')}"></td>
+          <td class="chiffres" th:text="${#temporals.format(incident.resoluLe, 'dd/MM/yyyy HH:mm')}"></td>
+          <td class="cacher-mobile" th:classappend="${incident.prestataireNom == null} ? 'discret'"
+              th:text="${incident.prestataireNom != null ? incident.prestataireNom : 'Intervention interne'}"></td>
+          <td class="droite chiffres" th:classappend="${incident.note == null} ? 'discret'"
+              th:text="${incident.note != null ? incident.note + ' / 5' : 'Non évalué'}"></td>
+        </tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
 </main>
 </body>
 </html>

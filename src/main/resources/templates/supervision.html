@@ -1,146 +1,128 @@
 <!DOCTYPE html>
 <html lang="fr" xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>StationOps — Supervision</title>
-  <link rel="stylesheet" th:href="@{/css/supervision.css}">
-</head>
-<body>
-<header th:replace="~{fragments/entete
-        :: entete(${utilisateurConnecte})}"></header>
+<head th:replace="~{fragments/entete :: tete('Supervision')}"></head>
+<body class="app">
+<aside th:replace="~{fragments/entete :: menu(${utilisateurConnecte}, 'supervision')}"></aside>
 
-<main>
-  <h1>Supervision des incidents actifs</h1>
-  <p>
-    <a th:href="@{/supervision/statistiques}">
-      Consulter les statistiques du réseau
-    </a>
-  </p>
-  <form method="get" th:action="@{/supervision}">
-    <label for="stationId">Station</label>
-    <select id="stationId" name="stationId">
-      <option value="">Toutes les stations</option>
+<main class="contenu">
+  <header th:replace="~{fragments/entete :: barre(${utilisateurConnecte}, 'Supervision')}"></header>
 
-      <option th:each="station : ${stations}"
-              th:value="${station.id}"
-              th:text="${station.nom}"
-              th:selected="${station.id == stationSelectionnee}">
-      </option>
-    </select>
+  <div class="entree">
+    <div class="entete-page">
+      <div>
+        <h1>Incidents actifs</h1>
+        <p class="sous-titre">Ancienneté calculée à l’affichage, seuils à 48 h et 72 h sans prestataire</p>
+      </div>
+      <div class="actions">
+        <a class="btn" th:href="@{/supervision/statistiques}">Statistiques du réseau</a>
+      </div>
+    </div>
 
-    <label for="statut">Affectation</label>
-    <select id="statut" name="statut">
-      <option value=""
-              th:selected="${statutSelectionne == ''}">
-        Tous les incidents actifs
-      </option>
+    <section class="grille-chiffres" aria-label="Indicateurs des résultats filtrés">
+      <div class="carte">
+        <p class="chiffre-libelle">Incidents actifs</p>
+        <p class="chiffre-valeur" th:text="${indicateurs.actifs}">0</p>
+        <p class="chiffre-legende">selon les filtres choisis</p>
+      </div>
+      <div class="carte">
+        <p class="chiffre-libelle">Sans prestataire</p>
+        <p class="chiffre-valeur" th:text="${indicateurs.nonAffectes}">0</p>
+        <p class="chiffre-legende">en attente d’affectation</p>
+      </div>
+      <div class="carte">
+        <p class="chiffre-libelle">Pris en charge</p>
+        <p class="chiffre-valeur" th:text="${indicateurs.affectes}">0</p>
+        <p class="chiffre-legende">affectés à un prestataire</p>
+      </div>
+      <div class="carte" th:classappend="${indicateurs.urgents > 0} ? 'chiffre-alerte'">
+        <p class="chiffre-libelle">72 h ou plus</p>
+        <p class="chiffre-valeur" th:text="${indicateurs.urgents}">0</p>
+        <p class="chiffre-legende">sans prestataire, à traiter en premier</p>
+      </div>
+    </section>
 
-      <option value="NON_AFFECTE"
-              th:selected="${statutSelectionne == 'NON_AFFECTE'}">
-        Non affectés
-      </option>
+    <section class="carte">
+      <div class="carte-entete">
+        <form class="filtres" method="get" th:action="@{/supervision}">
+          <select class="champ" id="stationId" name="stationId" aria-label="Station">
+            <option value="">Toutes les stations</option>
+            <option th:each="station : ${stations}"
+                    th:value="${station.id}"
+                    th:text="${station.nom}"
+                    th:selected="${station.id == stationSelectionnee}"></option>
+          </select>
 
-      <option value="AFFECTE"
-              th:selected="${statutSelectionne == 'AFFECTE'}">
-        Affectés
-      </option>
-    </select>
+          <select class="champ" id="statut" name="statut" aria-label="Affectation">
+            <option value="" th:selected="${statutSelectionne == ''}">Tous les incidents actifs</option>
+            <option value="NON_AFFECTE" th:selected="${statutSelectionne == 'NON_AFFECTE'}">Sans prestataire</option>
+            <option value="AFFECTE" th:selected="${statutSelectionne == 'AFFECTE'}">Pris en charge</option>
+          </select>
 
-    <button type="submit">Filtrer</button>
-    <a th:href="@{/supervision}">Réinitialiser</a>
-  </form>
+          <button class="btn" type="submit">Filtrer</button>
+          <a class="discret" th:href="@{/supervision}">Réinitialiser</a>
+        </form>
+        <span class="discret chiffres" th:text="|${#lists.size(incidents)} incident(s)|"></span>
+      </div>
 
-  <section aria-label="Indicateurs des résultats filtrés">
-    <h2>Résultats filtrés</h2>
+      <p class="info" th:if="${#lists.isEmpty(incidents)}">
+        Aucun incident actif ne correspond aux filtres sélectionnés
+      </p>
 
-    <dl>
-      <dt>Incidents actifs</dt>
-      <dd th:text="${indicateurs.actifs}"></dd>
+      <table class="tableau" th:unless="${#lists.isEmpty(incidents)}">
+        <thead>
+        <tr>
+          <th scope="col">Statut</th>
+          <th scope="col">Incident</th>
+          <th scope="col" class="cacher-mobile">Équipement</th>
+          <th scope="col" class="colonne-duree">Ouvert depuis</th>
+          <th scope="col" class="cacher-mobile">Prestataire</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="incident : ${incidents}">
+          <td th:switch="${incident.urgence.name()}">
+            <span th:case="'VERT'" class="statut statut-vert"
+                  title="Sans prestataire depuis moins de 48 heures"><span class="statut-texte">Vert</span></span>
+            <span th:case="'ORANGE'" class="statut statut-orange"
+                  title="Sans prestataire depuis 48 à moins de 72 heures"><span class="statut-texte">Orange</span></span>
+            <span th:case="'ROUGE'" class="statut statut-rouge"
+                  title="Sans prestataire depuis 72 heures ou plus"><span class="statut-texte">Rouge</span></span>
+            <span th:case="'AFFECTE'" class="statut statut-affecte"
+                  title="Affecté à un prestataire"><span class="statut-texte">Affecté</span></span>
+          </td>
+          <td class="large">
+            <a class="incident-titre" th:href="@{/incidents/{id}(id=${incident.id})}"
+               th:text="${incident.description}"></a>
+            <p class="incident-meta" th:text="|${incident.stationNom} · n° ${incident.id}|"></p>
+          </td>
+          <td class="cacher-mobile">
+            <a class="mono" th:href="@{/equipements/{id}(id=${incident.equipementId})}"
+               th:text="${incident.equipementReference}"></a>
+          </td>
+          <td>
+            <!-- la regle va de 0 a 96 h, avec des reperes a 48 h et 72 h (voir stationops.css) -->
+            <div class="duree">
+              <span class="chiffres" th:text="|${incident.ancienneteHeures} h|"></span>
+              <div class="regle" th:classappend="${incident.urgence.name() == 'AFFECTE'} ? '' : |regle-${#strings.toLowerCase(incident.urgence.name())}|">
+                <div class="regle-remplie"
+                     th:style="|width: ${incident.ancienneteHeures >= 96 ? 100 : incident.ancienneteHeures * 100 / 96}%|"></div>
+              </div>
+            </div>
+          </td>
+          <td class="cacher-mobile" th:classappend="${incident.prestataireNom == null} ? 'discret'"
+              th:text="${incident.prestataireNom != null ? incident.prestataireNom : 'Aucun'}"></td>
+        </tr>
+        </tbody>
+      </table>
 
-      <dt>Affectés</dt>
-      <dd th:text="${indicateurs.affectes}"></dd>
-
-      <dt>Non affectés</dt>
-      <dd th:text="${indicateurs.nonAffectes}"></dd>
-
-      <dt>Urgents — 72 h ou plus sans affectation</dt>
-      <dd th:text="${indicateurs.urgents}"></dd>
-    </dl>
-  </section>
-
-  <p th:if="${#lists.isEmpty(incidents)}">
-    Aucun incident actif ne correspond aux filtres sélectionnés
-  </p>
-
-  <table th:unless="${#lists.isEmpty(incidents)}">
-    <thead>
-    <tr>
-      <th scope="col">Incident</th>
-      <th scope="col">Station</th>
-      <th scope="col">Équipement</th>
-      <th scope="col">Description</th>
-      <th scope="col">Statut</th>
-      <th scope="col">Ouverture</th>
-      <th scope="col">Ancienneté</th>
-      <th scope="col">Prestataire</th>
-      <th scope="col">Urgence</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    <tr th:each="incident : ${incidents}">
-      <td>
-        <a th:href="@{/incidents/{id}(id=${incident.id})}"
-           th:text="${incident.id}"></a>
-      </td>
-      <td th:text="${incident.stationNom}"></td>
-
-      <td>
-        <a th:href="@{/equipements/{id}(id=${incident.equipementId})}"
-           th:text="${incident.equipementReference}">
-        </a>
-      </td>
-
-      <td th:text="${incident.description}"></td>
-      <td th:text="${incident.statut}"></td>
-
-      <td th:text="${#temporals.format(
-                    incident.ouvertLe, 'dd/MM/yyyy HH:mm')}"></td>
-
-      <td th:text="|${incident.ancienneteHeures} h|"></td>
-
-      <td th:text="${incident.prestataireNom != null
-                    ? incident.prestataireNom : 'Non affecté'}"></td>
-
-      <td th:switch="${incident.urgence.name()}">
-                <span th:case="'VERT'"
-                      class="urgence urgence-verte"
-                      role="img"
-                      aria-label="Non affecté depuis moins de 48 heures"
-                      title="Non affecté depuis moins de 48 heures"></span>
-
-        <span th:case="'ORANGE'"
-              class="urgence urgence-orange"
-              role="img"
-              aria-label="Non affecté depuis 48 à moins de 72 heures"
-              title="Non affecté depuis 48 à moins de 72 heures"></span>
-
-        <span th:case="'ROUGE'"
-              class="urgence urgence-rouge"
-              role="img"
-              aria-label="Non affecté depuis 72 heures ou plus"
-              title="Non affecté depuis 72 heures ou plus"></span>
-
-        <span th:case="'AFFECTE'"
-              class="urgence urgence-affectee"
-              role="img"
-              aria-label="Affecté à un prestataire"
-              title="Affecté à un prestataire"></span>
-      </td>
-    </tr>
-    </tbody>
-  </table>
+      <ul class="legende">
+        <li><span class="statut statut-vert">moins de 48 h sans prestataire</span></li>
+        <li><span class="statut statut-orange">de 48 h à moins de 72 h</span></li>
+        <li><span class="statut statut-rouge">72 h ou plus</span></li>
+        <li><span class="statut statut-affecte">pris en charge par un prestataire</span></li>
+      </ul>
+    </section>
+  </div>
 </main>
 </body>
 </html>

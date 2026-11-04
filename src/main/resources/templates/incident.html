@@ -1,105 +1,138 @@
 <!DOCTYPE html>
 <html lang="fr" xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title th:text="|StationOps — Incident ${incident.id}|">StationOps — Incident</title>
-</head>
-<body>
-<header th:replace="~{fragments/entete
-            :: entete(${utilisateurConnecte})}"></header>
+<head th:replace="~{fragments/entete :: tete(|Incident ${incident.id}|)}"></head>
+<body class="app">
+<aside th:replace="~{fragments/entete :: menu(${utilisateurConnecte}, '')}"></aside>
 
-<main>
-  <h1 th:text="|Incident ${incident.id}|">Incident</h1>
+<main class="contenu">
+  <header th:replace="~{fragments/entete :: barre(${utilisateurConnecte}, |Incident n° ${incident.id}|)}"></header>
 
-  <p th:if="${incident.resoluLe == null}">
-    <a th:href="@{/incidents/{id}/modifier(id=${incident.id})}">
-      Modifier la description
-    </a>
-  </p>
+  <div class="entree">
+    <div class="entete-page">
+      <div>
+        <h1 th:text="${incident.description}">Incident</h1>
+        <p class="sous-titre">
+          <span th:switch="${incident.urgence.name()}">
+            <span th:case="'VERT'" class="statut statut-vert">Sans prestataire, moins de 48 h</span>
+            <span th:case="'ORANGE'" class="statut statut-orange">Sans prestataire depuis 48 h ou plus</span>
+            <span th:case="'ROUGE'" class="statut statut-rouge">Sans prestataire depuis 72 h ou plus</span>
+            <span th:case="'AFFECTE'" class="statut statut-affecte">Pris en charge</span>
+            <span th:case="'RESOLU'" class="statut statut-resolu">Résolu</span>
+          </span>
+          <span class="discret" th:text="| · n° ${incident.id} · ${incident.stationNom}|"></span>
+        </p>
+      </div>
+      <div class="actions" th:if="${incident.resoluLe == null}">
+        <a class="btn" th:href="@{/incidents/{id}/modifier(id=${incident.id})}">Modifier la description</a>
+      </div>
+    </div>
 
-  <dl>
-    <dt>Description</dt>
-    <dd th:text="${incident.description}"></dd>
+    <div class="grille-principale">
+      <div class="colonne">
+        <section class="carte">
+          <div class="carte-entete">
+            <h2 th:text="${incident.resoluLe == null ? 'Ouvert depuis' : 'Durée avant résolution'}">Ouvert depuis</h2>
+            <span class="discret">calculé à l’affichage</span>
+          </div>
+          <p class="temps-ecoule chiffres">
+            <span th:text="|${incident.dureeHeures} h|"></span>
+            <small th:text="|${incident.dureeMinutes} min|"></small>
+          </p>
+          <!-- regle de 0 a 96 h avec les reperes 48 h et 72 h -->
+          <div class="regle regle-grande" style="margin-top: 24px"
+               th:classappend="${incident.urgence.name() == 'VERT' or incident.urgence.name() == 'ORANGE' or incident.urgence.name() == 'ROUGE'}
+                               ? |regle-${#strings.toLowerCase(incident.urgence.name())}|">
+            <div class="regle-remplie"
+                 th:style="|width: ${incident.dureeHeures >= 96 ? 100 : incident.dureeHeures * 100 / 96}%|"></div>
+          </div>
+          <div class="regle-graduation">
+            <span style="left: 0">0 h</span><span style="left: 50%">48 h</span><span style="left: 75%">72 h</span>
+          </div>
+        </section>
 
-    <dt>Statut</dt>
-    <dd th:switch="${incident.statut.name()}">
-      <span th:case="'NON_AFFECTE'">Non affecté</span>
-      <span th:case="'AFFECTE'">Affecté à un prestataire</span>
-      <span th:case="'RESOLU'">Résolu</span>
-    </dd>
+        <section class="carte">
+          <div class="carte-entete"><h2>Incident</h2></div>
+          <dl class="infos">
+            <dt>Description</dt>
+            <dd th:text="${incident.description}"></dd>
 
-    <dt>Équipement</dt>
-    <dd>
-      <a th:href="@{/equipements/{id}(id=${incident.equipementId})}"
-         th:text="|${incident.equipementLibelle} (${incident.equipementReference})|">
-      </a>
-    </dd>
+            <dt>Équipement</dt>
+            <dd>
+              <a th:href="@{/equipements/{id}(id=${incident.equipementId})}"
+                 th:text="${incident.equipementLibelle}"></a>
+              <span class="mono discret" th:text="${incident.equipementReference}"></span>
+            </dd>
 
-    <dt>Station</dt>
-    <dd th:text="${incident.stationNom}"></dd>
+            <dt>Station</dt>
+            <dd th:text="${incident.stationNom}"></dd>
 
-    <dt>Ouverture</dt>
-    <dd th:text="${#temporals.format(incident.ouvertLe, 'dd/MM/yyyy HH:mm')}"></dd>
+            <dt>Ouverture</dt>
+            <dd class="chiffres" th:text="${#temporals.format(incident.ouvertLe, 'dd/MM/yyyy HH:mm')}"></dd>
 
-    <dt th:text="${incident.resoluLe == null ? 'Ouvert depuis' : 'Durée avant résolution'}">
-      Ouvert depuis
-    </dt>
-    <dd th:text="|${incident.dureeHeures} h ${incident.dureeMinutes} min|"></dd>
+            <th:block th:if="${incident.resoluLe != null}">
+              <dt>Résolution</dt>
+              <dd class="chiffres" th:text="${#temporals.format(incident.resoluLe, 'dd/MM/yyyy HH:mm')}"></dd>
+            </th:block>
 
-    <dt th:if="${incident.resoluLe != null}">Résolution</dt>
-    <dd th:if="${incident.resoluLe != null}"
-        th:text="${#temporals.format(incident.resoluLe, 'dd/MM/yyyy HH:mm')}"></dd>
+            <dt>Prestataire</dt>
+            <dd th:classappend="${incident.prestataireNom == null} ? 'discret'"
+                th:text="${incident.prestataireNom != null ? incident.prestataireNom : 'Aucun prestataire affecté'}"></dd>
 
-    <dt>Prestataire</dt>
-    <dd th:text="${incident.prestataireNom != null
-                  ? incident.prestataireNom : 'Aucun prestataire affecté'}"></dd>
+            <dt>Évaluation</dt>
+            <dd th:if="${evaluation != null}">
+              <span class="chiffres" th:text="|${evaluation.note} / 5|"></span>
+              <span class="second" th:if="${evaluation.commentaire != null}"
+                    th:text="| · ${evaluation.commentaire}|"></span>
+            </dd>
+            <dd th:if="${evaluation == null}" class="discret">Pas encore évalué</dd>
+          </dl>
+        </section>
+      </div>
 
-    <dt>Évaluation</dt>
-    <dd th:if="${evaluation != null}">
-      <span th:text="|${evaluation.note} / 5|"></span>
-      <span th:if="${evaluation.commentaire != null}"
-            th:text="|— ${evaluation.commentaire}|"></span>
-    </dd>
-    <dd th:if="${evaluation == null}">
-      Pas encore évalué
-      <a th:if="${incident.resoluLe != null and incident.prestataireNom != null
-                  and utilisateurConnecte.profil.name() == 'RESPONSABLE_EXPLOITATION'}"
-         th:href="@{/incidents/{id}/evaluation(id=${incident.id})}">
-        — évaluer le prestataire
-      </a>
-    </dd>
-  </dl>
+      <div class="colonne">
+        <th:block th:if="${incident.resoluLe == null
+                          and utilisateurConnecte.profil.name() == 'RESPONSABLE_EXPLOITATION'}">
+          <section class="carte">
+            <div class="carte-entete">
+              <h2 th:text="${incident.prestataireNom == null ? 'Affecter un prestataire' : 'Réaffecter'}">Affecter un prestataire</h2>
+            </div>
+            <form class="formulaire" th:action="@{/incidents/{id}/affectation(id=${incident.id})}" method="post">
+              <select class="champ" id="prestataireId" name="prestataireId" aria-label="Prestataire" required>
+                <option th:each="prestataire : ${prestataires}"
+                        th:value="${prestataire.id}"
+                        th:text="${prestataire.nom}"
+                        th:selected="${prestataire.nom == incident.prestataireNom}"></option>
+              </select>
+              <button class="btn btn-principal btn-bloc" type="submit">Affecter</button>
+            </form>
+          </section>
 
-  <th:block th:if="${incident.resoluLe == null
-                    and utilisateurConnecte.profil.name() == 'RESPONSABLE_EXPLOITATION'}">
-    <h2 th:text="${incident.prestataireNom == null ? 'Affecter un prestataire' : 'Réaffecter à un autre prestataire'}">
-      Affecter un prestataire
-    </h2>
-    <form th:action="@{/incidents/{id}/affectation(id=${incident.id})}" method="post">
-      <label for="prestataireId">Prestataire</label>
-      <select id="prestataireId" name="prestataireId" required>
-        <option th:each="prestataire : ${prestataires}"
-                th:value="${prestataire.id}"
-                th:text="${prestataire.nom}"
-                th:selected="${prestataire.nom == incident.prestataireNom}">
-        </option>
-      </select>
-      <button type="submit">Affecter</button>
-    </form>
+          <section class="carte">
+            <div class="carte-entete"><h2>Résolution</h2></div>
+            <p class="aide" style="margin-bottom: 16px">
+              L’heure est enregistrée au moment de la validation. L’équipement repasse en service
+              s’il n’a plus d’incident actif
+            </p>
+            <form th:action="@{/incidents/{id}/resolution(id=${incident.id})}" method="post">
+              <button class="btn btn-bloc" type="submit">Déclarer l’incident résolu</button>
+            </form>
+          </section>
+        </th:block>
 
-    <h2>Résolution</h2>
-    <p>L’heure de résolution est enregistrée au moment de la validation.</p>
-    <form th:action="@{/incidents/{id}/resolution(id=${incident.id})}" method="post">
-      <button type="submit">Déclarer l’incident résolu</button>
-    </form>
-  </th:block>
+        <section class="carte" th:if="${evaluation == null and incident.resoluLe != null and incident.prestataireNom != null
+                                       and utilisateurConnecte.profil.name() == 'RESPONSABLE_EXPLOITATION'}">
+          <div class="carte-entete"><h2>Évaluation</h2></div>
+          <p class="aide" style="margin-bottom: 16px">L’incident est résolu, l’intervention du prestataire peut être notée</p>
+          <a class="btn btn-principal btn-bloc" th:href="@{/incidents/{id}/evaluation(id=${incident.id})}">Évaluer le prestataire</a>
+        </section>
 
-  <p>
-    <a th:href="@{/equipements/{id}(id=${incident.equipementId})}">
-      Retour à la fiche de l’équipement
-    </a>
-  </p>
+        <section class="carte">
+          <div class="carte-entete"><h2>Équipement</h2></div>
+          <a class="btn btn-bloc" th:href="@{/equipements/{id}(id=${incident.equipementId})}">Voir la fiche de l’équipement</a>
+        </section>
+      </div>
+    </div>
+  </div>
 </main>
 </body>
 </html>
