@@ -1,34 +1,92 @@
 <!DOCTYPE html>
 <html lang="fr" xmlns:th="http://www.thymeleaf.org">
-    <body>
-        <header th:fragment="entete(utilisateur)"
-                style="display: flex; justify-content: space-between;
-                           align-items: center; gap: 1rem;">
 
-          <a th:href="@{/}">StationOps</a>
+<!-- en-tete commun a toutes les pages : head, menu lateral et barre du haut -->
 
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <span>
-                  Bonjour
-                  <span th:text="${utilisateur.prenom}"></span>
-                  (<span th:text="${utilisateur.libelleProfil}"></span>)
-              </span>
-              <span aria-hidden="true">|</span>
-              <nav aria-label="Navigation principale">
-                  <a th:href="@{/}">Accueil</a>
-                  <a th:href="@{/stations}">Stations</a>
-                  <a th:href="@{/incidents/historique}">Historique</a>
+<head th:fragment="tete(titre)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="|${titre} · StationOps|">StationOps</title>
+    <link rel="stylesheet" th:href="@{/css/stationops.css}">
+    <script th:src="@{/js/stationops.js}" defer></script>
+</head>
 
-                  <a th:if="${utilisateur.profil.name()
-                            == 'RESPONSABLE_EXPLOITATION'}"
-                     th:href="@{/supervision}">
-                      Supervision
-                  </a>
-              </nav>
-              <form th:action="@{/logout}" method="post">
-                <button type="submit">Déconnectez-vous</button>
-              </form>
-          </div>
-        </header>
-    </body>
+<body>
+
+<!-- actif = nom de la page courante pour griser le bon lien du menu -->
+<aside class="menu" th:fragment="menu(utilisateur, actif)">
+    <a class="logo" th:href="@{/}"><span class="logo-panneau">S</span>StationOps</a>
+
+    <a class="menu-lien" th:classappend="${actif == 'accueil'} ? 'actif'" th:href="@{/}">
+        <svg class="icone" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>
+            <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        </svg>
+        Accueil
+    </a>
+
+    <a class="menu-lien" th:classappend="${actif == 'stations'} ? 'actif'" th:href="@{/stations}">
+        <svg class="icone" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/>
+            <circle cx="12" cy="10" r="3"/>
+        </svg>
+        Stations
+    </a>
+
+    <a class="menu-lien" th:classappend="${actif == 'historique'} ? 'actif'" th:href="@{/incidents/historique}">
+        <svg class="icone" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+            <path d="M12 7v5l4 2"/>
+        </svg>
+        Historique
+    </a>
+
+    <th:block th:if="${utilisateur.profil.name() == 'RESPONSABLE_EXPLOITATION'}">
+        <p class="menu-section">Responsable</p>
+
+        <a class="menu-lien" th:classappend="${actif == 'supervision'} ? 'actif'" th:href="@{/supervision}">
+            <svg class="icone" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m12 14 4-4"/>
+                <path d="M3.34 19a10 10 0 1 1 17.32 0"/>
+            </svg>
+            Supervision
+        </a>
+
+        <a class="menu-lien" th:classappend="${actif == 'statistiques'} ? 'actif'" th:href="@{/supervision/statistiques}">
+            <svg class="icone" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 21v-6"/>
+                <path d="M12 21V3"/>
+                <path d="M19 21V9"/>
+            </svg>
+            Statistiques
+        </a>
+    </th:block>
+</aside>
+
+<!-- F1 : Bonjour Prenom (profil) | Deconnectez-vous en haut a droite de chaque page -->
+<header class="barre-haut" th:fragment="barre(utilisateur, titre)">
+    <div class="ariane">
+        <button class="btn bouton-menu" type="button" aria-label="Ouvrir le menu">
+            <svg class="icone" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 5h16"/>
+                <path d="M4 12h16"/>
+                <path d="M4 19h16"/>
+            </svg>
+        </button>
+        <span th:text="${titre}">Page</span>
+    </div>
+    <div class="session">
+        <span>
+            Bonjour <span th:text="${utilisateur.prenom}"></span>
+            <span class="session-profil discret" th:text="|(${utilisateur.libelleProfil})|"></span>
+        </span>
+        <span class="session-separateur" aria-hidden="true">|</span>
+        <form th:action="@{/logout}" method="post">
+            <button class="lien-bouton" type="submit">Déconnectez-vous</button>
+        </form>
+    </div>
+</header>
+
+</body>
 </html>

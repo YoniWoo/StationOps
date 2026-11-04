@@ -1,51 +1,55 @@
 <!DOCTYPE html>
 <html lang="fr" xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>StationOps — Équipements</title>
-</head>
-<body>
-<header th:replace="~{fragments/entete
-            :: entete(${utilisateurConnecte})}"></header>
+<head th:replace="~{fragments/entete :: tete('Équipements')}"></head>
+<body class="app">
+<aside th:replace="~{fragments/entete :: menu(${utilisateurConnecte}, 'stations')}"></aside>
 
-<main>
-  <h1>
-    Équipements de la station
-    <span th:text="${station.nom}"></span>
-  </h1>
+<main class="contenu">
+  <header th:replace="~{fragments/entete :: barre(${utilisateurConnecte}, ${station.nom})}"></header>
 
-  <p th:if="${#lists.isEmpty(equipements)}">
-    Aucun équipement n’est enregistré dans cette station.
-  </p>
+  <div class="entree">
+    <div class="entete-page">
+      <div>
+        <h1 th:text="${station.nom}">Station</h1>
+        <p class="sous-titre">Équipements de la station</p>
+      </div>
+      <div class="actions">
+        <a class="btn" th:href="@{/stations}">Toutes les stations</a>
+      </div>
+    </div>
 
-  <table th:unless="${#lists.isEmpty(equipements)}">
-    <thead>
-    <tr>
-      <th scope="col">Référence</th>
-      <th scope="col">Libellé</th>
-      <th scope="col">Type</th>
-      <th scope="col">État</th>
-    </tr>
-    </thead>
+    <section class="carte">
+      <p class="info" th:if="${#lists.isEmpty(equipements)}">
+        Aucun équipement n’est enregistré dans cette station
+      </p>
 
-    <tbody>
-    <tr th:each="equipement : ${equipements}">
-      <td>
-        <a th:href="@{/equipements/{id}(id=${equipement.id})}"
-           th:text="${equipement.reference}">
-        </a>
-      </td>
-      <td th:text="${equipement.libelle}"></td>
-      <td th:text="${equipement.type}"></td>
-      <td th:text="${equipement.etat}"></td>
-    </tr>
-    </tbody>
-  </table>
-
-  <p>
-    <a th:href="@{/stations}">Retour aux stations</a>
-  </p>
+      <table class="tableau" th:unless="${#lists.isEmpty(equipements)}">
+        <thead>
+        <tr>
+          <th scope="col">Référence</th>
+          <th scope="col">Libellé</th>
+          <th scope="col" class="cacher-mobile">Type</th>
+          <th scope="col">État</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="equipement : ${equipements}">
+          <td>
+            <a class="mono" th:href="@{/equipements/{id}(id=${equipement.id})}"
+               th:text="${equipement.reference}"></a>
+          </td>
+          <td class="large" th:text="${equipement.libelle}"></td>
+          <td class="cacher-mobile second"
+              th:text="${#strings.capitalize(#strings.toLowerCase(#strings.replace(equipement.type.name(), '_', ' ')))}"></td>
+          <td>
+            <span th:if="${equipement.etat.name() == 'EN_SERVICE'}" class="statut statut-vert">En service</span>
+            <span th:if="${equipement.etat.name() == 'HORS_SERVICE'}" class="statut statut-rouge">Hors service</span>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
 </main>
 </body>
 </html>

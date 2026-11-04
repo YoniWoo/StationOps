@@ -3,13 +3,13 @@ package altn72.tpfilrouge.configuration;
 import altn72.tpfilrouge.modele.Profil;
 import altn72.tpfilrouge.modele.Utilisateur;
 import altn72.tpfilrouge.repository.UtilisateurRepository;
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @Profile("demo")

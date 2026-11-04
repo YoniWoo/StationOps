@@ -1,25 +1,36 @@
 <!DOCTYPE html>
 <html lang="fr" xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>StationOps — Accueil</title>
-</head>
-<body>
-<header th:replace="~{fragments/entete
-            :: entete(${utilisateurConnecte})}"></header>
+<head th:replace="~{fragments/entete :: tete('Accueil')}"></head>
+<body class="app">
+<aside th:replace="~{fragments/entete :: menu(${utilisateurConnecte}, 'accueil')}"></aside>
 
-<main>
-  <h1>Bienvenue sur StationOps</h1>
-  <p>Supervision des équipements et suivi des incidents.</p>
-  <a th:if="${utilisateurConnecte.profil.name()
-                == 'RESPONSABLE_EXPLOITATION'}"
-     th:href="@{/supervision}">
-    Accéder à la supervision
-  </a>
-  <p>
-    <a th:href="@{/stations}">Consulter les stations</a>
-  </p>
+<main class="contenu">
+  <header th:replace="~{fragments/entete :: barre(${utilisateurConnecte}, 'Accueil')}"></header>
+
+  <div class="entree">
+    <div class="entete-page">
+      <div>
+        <h1>StationOps</h1>
+        <p class="sous-titre">Supervision des équipements et suivi des incidents</p>
+      </div>
+    </div>
+
+    <section class="accueil-raccourcis">
+      <a class="carte" th:if="${utilisateurConnecte.profil.name() == 'RESPONSABLE_EXPLOITATION'}"
+         th:href="@{/supervision}">
+        <h2>Supervision</h2>
+        <p>Incidents actifs, niveau d’attention et indicateurs</p>
+      </a>
+      <a class="carte" th:href="@{/stations}">
+        <h2>Stations</h2>
+        <p>Équipements de chaque station et déclaration d’un incident</p>
+      </a>
+      <a class="carte" th:href="@{/incidents/historique}">
+        <h2>Historique</h2>
+        <p>Incidents résolus, du plus récent au plus ancien</p>
+      </a>
+    </section>
+  </div>
 </main>
 </body>
 </html>

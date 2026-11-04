@@ -1,48 +1,49 @@
 <!DOCTYPE html>
 <html lang="fr" xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>StationOps — Évaluer un prestataire</title>
-</head>
-<body>
-<header th:replace="~{fragments/entete
-            :: entete(${utilisateurConnecte})}"></header>
+<head th:replace="~{fragments/entete :: tete('Évaluer un prestataire')}"></head>
+<body class="app">
+<aside th:replace="~{fragments/entete :: menu(${utilisateurConnecte}, '')}"></aside>
 
-<main>
-  <h1>Évaluer l’intervention</h1>
+<main class="contenu">
+  <header th:replace="~{fragments/entete :: barre(${utilisateurConnecte}, |Incident n° ${incident.id}|)}"></header>
 
-  <p>
-    Incident <span th:text="${incident.id}"></span> :
-    <span th:text="${incident.description}"></span><br>
-    Prestataire : <strong th:text="${incident.prestataireNom}"></strong>
-  </p>
+  <div class="entree formulaire-page">
+    <div class="entete-page">
+      <div>
+        <h1>Évaluer l’intervention</h1>
+        <p class="sous-titre">
+          <span th:text="${incident.prestataireNom}"></span>
+          <span class="discret" th:text="| · incident n° ${incident.id}, ${incident.description}|"></span>
+        </p>
+      </div>
+    </div>
 
-  <form th:action="@{/incidents/{id}/evaluation(id=${incident.id})}"
-        th:object="${formulaire}" method="post">
-    <fieldset>
-      <legend>Note de 1 à 5</legend>
-      <th:block th:each="valeur : ${#numbers.sequence(1, 5)}">
-        <input type="radio" th:field="*{note}" th:value="${valeur}">
-        <label th:for="${#ids.prev('note')}" th:text="${valeur}"></label>
-      </th:block>
-    </fieldset>
-    <p th:if="${#fields.hasErrors('note')}" th:errors="*{note}" role="alert"></p>
+    <section class="carte">
+      <form class="formulaire" th:action="@{/incidents/{id}/evaluation(id=${incident.id})}"
+            th:object="${formulaire}" method="post">
+        <fieldset class="notes">
+          <legend class="second" style="margin-bottom: 8px">Note de 1 à 5</legend>
+          <th:block th:each="valeur : ${#numbers.sequence(1, 5)}">
+            <input type="radio" th:field="*{note}" th:value="${valeur}">
+            <label th:for="${#ids.prev('note')}" th:text="${valeur}"></label>
+          </th:block>
+        </fieldset>
+        <span class="erreur-champ" th:if="${#fields.hasErrors('note')}" th:errors="*{note}" role="alert"></span>
 
-    <p>
-      <label for="commentaire">Commentaire (facultatif)</label><br>
-      <textarea id="commentaire" th:field="*{commentaire}"
-                rows="4" cols="60" maxlength="2000"></textarea>
-    </p>
-    <p th:if="${#fields.hasErrors('commentaire')}"
-       th:errors="*{commentaire}" role="alert"></p>
+        <label for="commentaire">Commentaire (facultatif)
+          <textarea class="champ champ-bloc" id="commentaire" th:field="*{commentaire}"
+                    rows="4" maxlength="2000"></textarea>
+          <span class="erreur-champ" th:if="${#fields.hasErrors('commentaire')}"
+                th:errors="*{commentaire}" role="alert"></span>
+        </label>
 
-    <button type="submit">Enregistrer l’évaluation</button>
-  </form>
-
-  <p>
-    <a th:href="@{/incidents/{id}(id=${incident.id})}">Retour au détail</a>
-  </p>
+        <div class="actions">
+          <button class="btn btn-principal" type="submit">Enregistrer l’évaluation</button>
+          <a class="btn" th:href="@{/incidents/{id}(id=${incident.id})}">Annuler</a>
+        </div>
+      </form>
+    </section>
+  </div>
 </main>
 </body>
 </html>

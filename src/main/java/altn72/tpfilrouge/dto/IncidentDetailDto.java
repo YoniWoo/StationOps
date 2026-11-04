@@ -1,5 +1,6 @@
 package altn72.tpfilrouge.dto;
 
+import altn72.tpfilrouge.modele.NiveauUrgence;
 import altn72.tpfilrouge.modele.StatutIncident;
 
 import java.time.LocalDateTime;
@@ -17,5 +18,6 @@ public record IncidentDetailDto(
         String stationNom,
         String prestataireNom,
         long dureeHeures,
-        long dureeMinutes) {
+        long dureeMinutes,
+        NiveauUrgence urgence) {
 }

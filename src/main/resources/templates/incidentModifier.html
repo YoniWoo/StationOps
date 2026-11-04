@@ -1,44 +1,45 @@
 <!DOCTYPE html>
 <html lang="fr" xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>StationOps — Modifier un incident</title>
-</head>
-<body>
-<header th:replace="~{fragments/entete
-            :: entete(${utilisateurConnecte})}"></header>
+<head th:replace="~{fragments/entete :: tete('Modifier un incident')}"></head>
+<body class="app">
+<aside th:replace="~{fragments/entete :: menu(${utilisateurConnecte}, '')}"></aside>
 
-<main>
-  <h1 th:text="|Modifier l’incident ${incident.id}|">Modifier l’incident</h1>
+<main class="contenu">
+  <header th:replace="~{fragments/entete :: barre(${utilisateurConnecte}, |Incident n° ${incident.id}|)}"></header>
 
-  <p>
-    Équipement :
-    <strong th:text="|${incident.equipementLibelle} (${incident.equipementReference})|"></strong>,
-    station <span th:text="${incident.stationNom}"></span>
-  </p>
+  <div class="entree formulaire-page">
+    <div class="entete-page">
+      <div>
+        <h1>Modifier la description</h1>
+        <p class="sous-titre">
+          <span th:text="|Incident n° ${incident.id} · ${incident.equipementLibelle}|"></span>
+          <span class="mono discret" th:text="${incident.equipementReference}"></span>
+        </p>
+      </div>
+    </div>
 
-  <p th:if="${incident.resoluLe != null}" role="alert">
-    Cet incident est résolu, sa description ne peut plus être modifiée.
-  </p>
+    <section class="carte">
+      <p class="info" th:if="${incident.resoluLe != null}" role="alert">
+        Cet incident est résolu, sa description ne peut plus être modifiée
+      </p>
 
-  <form th:if="${incident.resoluLe == null}"
-        th:action="@{/incidents/{id}/modifier(id=${incident.id})}"
-        th:object="${formulaire}" method="post">
-    <p>
-      <label for="description">Description de la panne</label><br>
-      <textarea id="description" th:field="*{description}"
-                rows="5" cols="60" maxlength="2000"></textarea>
-    </p>
-    <p th:if="${#fields.hasErrors('description')}"
-       th:errors="*{description}" role="alert"></p>
+      <form class="formulaire" th:if="${incident.resoluLe == null}"
+            th:action="@{/incidents/{id}/modifier(id=${incident.id})}"
+            th:object="${formulaire}" method="post">
+        <label for="description">Description de la panne
+          <textarea class="champ champ-bloc" id="description" th:field="*{description}"
+                    rows="5" maxlength="2000"></textarea>
+          <span class="erreur-champ" th:if="${#fields.hasErrors('description')}"
+                th:errors="*{description}" role="alert"></span>
+        </label>
 
-    <button type="submit">Enregistrer</button>
-  </form>
-
-  <p>
-    <a th:href="@{/incidents/{id}(id=${incident.id})}">Retour au détail</a>
-  </p>
+        <div class="actions">
+          <button class="btn btn-principal" type="submit">Enregistrer</button>
+          <a class="btn" th:href="@{/incidents/{id}(id=${incident.id})}">Annuler</a>
+        </div>
+      </form>
+    </section>
+  </div>
 </main>
 </body>
 </html>

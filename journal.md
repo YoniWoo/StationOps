@@ -23,10 +23,50 @@ Deux comptes sont disponibles :
 Les mots de passe ne sont pas inscrits dans le dépôt. L’initialisation crée uniquement les comptes absents : une modification des variables d’environnement ne remplace pas le mot de passe d’un compte existant.
 Limite technique identifiée : la version MariaDB fournie par XAMPP est la 10.4.28. Hibernate signale un minimum pris en charge de 10.6. Le démarrage fonctionne, mais une version compatible devra être utilisée pour la validation finale.
 
+### Application déployée
+
+- URL : https://stationops-production.up.railway.app
+- Hébergement : Railway, base MySQL 8.4, profil `demo` activé.
+- Comptes de test : les deux comptes ci-dessus. Leurs mots de passe ne sont pas
+  écrits dans le dépôt Git (aucun mot de passe en clair dans Git) ; ils sont
+  fournis dans le fichier déposé sur Moodle.
+
+### Lancer l’application en ligne de commande
+
+Prérequis : Java 21 et une base MariaDB (ou MySQL) démarrée. Maven n’a pas
+besoin d’être installé, le wrapper `./mvnw` est fourni.
+
+```bash
+mysql -u root -p < db/schema.sql
+
+export DB_URL=jdbc:mariadb://localhost:3306/stationops
+export DB_USERNAME=utilisateur_local
+export DB_PASSWORD=mot_de_passe_local
+export DEMO_RESPONSABLE_PASSWORD=choisir_un_mot_de_passe
+export DEMO_AGENT_PASSWORD=choisir_un_mot_de_passe
+
+./mvnw spring-boot:run -Dspring-boot.run.profiles=demo
+```
+
+L’application est ensuite accessible sur http://localhost:8080.
+La documentation de l’API est sur http://localhost:8080/swagger-ui.html.
+
+### Limites connues
+
+- Les dates de démonstration sont calculées au premier démarrage et vieillissent :
+  après quelques jours, tous les incidents non affectés deviennent rouges.
+  Pour retrouver les cas 47 h, 48 h et 72 h, il suffit de relancer `db/schema.sql`
+  puis de redémarrer l’application avec le profil `demo`.
+- En production, le driver MariaDB se connecte à MySQL 8.4 : Hibernate affiche
+  un avertissement de version (HHH000511), sans effet sur le fonctionnement.
+- Les dates utilisent LocalDateTime, sans fuseau : le changement d’heure
+  peut décaler d’une heure le calcul d’ancienneté ce jour-là.
+
 ### Initialisation de la base
 
 1. Démarrer MariaDB.
-2. Exécuter le fichier `db/schema.sql`.
+2. Exécuter le fichier `db/schema.sql`. Il supprime la base `stationops` si elle
+   existe puis la recrée vide : relancer le script remet tout à zéro en quelques secondes.
 3. Configurer les variables DB_URL, DB_USERNAME et DB_PASSWORD.
 4. Pour charger la démonstration, activer le profil Spring `demo`
    et renseigner DEMO_RESPONSABLE_PASSWORD et DEMO_AGENT_PASSWORD.
@@ -48,6 +88,31 @@ Elles vieillissent ensuite normalement et ne sont pas recalculées
 à chaque redémarrage.
 
 ## ARCHITECTURE
+
+- Dépôt : https://github.com/YoniWoo/StationOps
+- Branches : `master` (version livrée), `dev` (intégration), `tim` et `dev-yoni` (travail de chacun).
+
+### Schéma de l’architecture
+
+```mermaid
+flowchart TD
+    N[Navigateur] -->|HTTP, pages HTML| S[Spring Security<br/>session, rôles, CSRF]
+    C[Client REST / Swagger] -->|JSON| S
+    S --> W[Contrôleurs Thymeleaf<br/>package controleur]
+    S --> A[Contrôleurs REST<br/>package api]
+    W --> V[Vues Thymeleaf<br/>templates + stationops.css]
+    W --> SV[Services<br/>règles métier, @Transactional]
+    A --> SV
+    SV --> R[Repositories Spring Data JPA<br/>requêtes dérivées, JPQL, 1 SQL natif]
+    R --> DB[(MariaDB / MySQL)]
+    EW[GestionErreurWeb<br/>@ControllerAdvice] -.-> W
+    EA[GestionErreurApi<br/>@ControllerAdvice] -.-> A
+```
+
+Les contrôleurs ne contiennent pas de règle métier : ils lisent la requête,
+appellent un service et choisissent la vue ou la réponse. Les pages qui
+assemblent plusieurs entités (supervision, fiche équipement, détail et historique
+des incidents) reçoivent des DTO, ce qui évite les chargements paresseux dans les vues.
 
 ### Modèle de données
 
@@ -131,7 +196,7 @@ Résultat : 9 tests réussis, aucun échec.
 Les comptes de test sont créés dans H2 et les transactions sont
 annulées après chaque test. La base MariaDB n’est pas modifiée.
 
-Les protections du périmètre REST réalisé sont couvertes par ApiHttpTest. Les autorisations des futures routes métier restent à vérifier lors de leur intégration.
+Les protections du périmètre REST réalisé sont couvertes par ApiHttpTest. Les autorisations des pages du cycle de vie des incidents sont vérifiées dans IncidentWebTest.
 
 ### Validation manuelle des consultations — F2 et F3
 
@@ -196,9 +261,8 @@ Commande :
 ./mvnw -Dtest=ApiHttpTest,SecuriteHttpTest test
 ```
 
-Résultat avant l’adaptation de la redirection des utilisateurs anonymes :
-21 tests réussis, aucun échec. La relance après le remplacement du 401
-par une redirection 302 reste à confirmer.
+Résultat après le remplacement du 401 par une redirection 302 pour les
+utilisateurs anonymes : 21 tests réussis, aucun échec.
 
 Les 12 tests API couvrent les cas suivants ; les deux assertions relatives
 aux utilisateurs anonymes ont été adaptées au comportement 302 attendu :
@@ -226,29 +290,29 @@ Les tests utilisent H2 avec annulation des transactions après chaque test.
 Ils ne modifient pas les données MariaDB.
 Les droits des pages du cycle de vie des incidents sont testés dans IncidentWebTest.
 
-### Cycle de vie des incidents — F4 à F10
+### Cycle de vie des incidents — F4 à F10 (Tim)
 
-Les règles sont testées à deux niveaux.
+Les regles sont testées a 2 niveaux.
 
 Tests unitaires avec Mockito et une horloge fixe (IncidentServiceTest, EvaluationServiceTest, EvaluationTest) :
-- Un incident déclaré démarre sans prestataire et met l’équipement hors service.
-- Un équipement inexistant ou un incident inexistant lève RessourceIntrouvableException.
-- La description d’un incident résolu ne peut plus être modifiée.
-- Un incident peut être affecté puis réaffecté, mais pas une fois résolu.
-- La résolution enregistre l’heure de l’horloge et remet l’équipement en service seulement s’il n’a plus d’incident actif.
-- La durée d’ouverture s’arrête à la résolution.
-- Une évaluation est refusée si l’incident n’est pas résolu, si une évaluation existe déjà ou si la note sort de 1 à 5.
-- L’historique contient la note quand l’incident est évalué.
+- un incident declaré demarre sans prestataire et met l'equipement hors service
+- un equipement ou un incident qui existe pas leve RessourceIntrouvableException
+- la description d'un incident résolu peut plus etre modifiée
+- un incident peut etre affecté puis reaffecté, mais plus une fois résolu
+- la resolution prend l'heure de l'horloge et remet l'equipement en service seulement si il a plus d'incident actif
+- la durée d'ouverture s'arrete a la resolution
+- une evaluation est refusée si l'incident est pas résolu, si il y a deja une evaluation ou si la note est pas entre 1 et 5
+- l'historique a bien la note quand l'incident a été evalué
 
-Tests de repository sur H2 (IncidentRepositoryTest) : historique trié du plus récent au plus ancien, exclusion des incidents actifs, chargement de la station et du prestataire pour la page détail.
+Tests de repository sur H2 (IncidentRepositoryTest) : historique trié du plus récent au plus ancien, les incidents actifs sont pas dedans, et la page detail charge bien la station et le prestataire.
 
 Tests HTTP avec MockMvc (IncidentWebTest, 18 tests) :
-- Un incident inexistant affiche la page 404.
-- Résoudre deux fois le même incident ou évaluer un incident non résolu affiche la page 409.
-- Un agent reçoit 403 sur la résolution et sur l’évaluation.
-- Une déclaration avec une description vide réaffiche le formulaire avec un message sous le champ.
-- Les formulaires de déclaration, de modification et d’évaluation redirigent vers le détail après succès.
-- L’historique et l’export CSV sont accessibles aux deux profils.
+- un incident qui existe pas affiche la page 404
+- resoudre 2 fois le meme incident ou evaluer un incident pas résolu affiche la page 409
+- un agent prend un 403 sur la resolution et sur l'evaluation
+- une declaration avec une description vide reaffiche le formulaire avec le message sous le champ
+- les formulaires de declaration, modification et evaluation renvoient sur le detail quand c'est bon
+- l'historique et l'export CSV marchent pour les 2 profils
 
 Commande :
 
@@ -256,7 +320,7 @@ Commande :
 ./mvnw test
 ```
 
-Non couvert : l’affichage visuel des pages, vérifié à la main dans le navigateur.
+Pas couvert : le rendu visuel des pages, on l'a verifié a la main dans le navigateur.
 
 ## CHOIX TECHNIQUES
 
@@ -273,18 +337,40 @@ Non couvert : l’affichage visuel des pages, vérifié à la main dans le navig
 | F10 | Évaluer un prestataire | Accès complet | Lecture seule (la note est visible sur le détail et dans l’historique) |
 | F11 | Tableau de bord | Accès complet | Interdit |
 
-Les restrictions sont appliquées par Spring Security dans ConfigurationSecurite :
-les POST /incidents/*/affectation et /incidents/*/resolution ainsi que /incidents/*/evaluation
-sont réservés au rôle RESPONSABLE_EXPLOITATION. Les boutons sont aussi masqués pour l’agent,
-mais ce n’est qu’un confort : un agent qui envoie la requête à la main reçoit 403.
+Les restrictions sont faites par Spring Security dans ConfigurationSecurite :
+les POST /incidents/*/affectation et /incidents/*/resolution et /incidents/*/evaluation
+sont reservés au role RESPONSABLE_EXPLOITATION. On cache aussi les boutons pour l'agent
+mais c'est juste du confort, si un agent envoie la requete a la main il prend un 403.
 
-### Ce qui est modifiable — F6
+### Gestion des exceptions : @ControllerAdvice plutôt que ResponseStatusException
 
-Seule la description d’un incident est modifiable, par les deux profils, tant que l’incident n’est pas résolu.
-L’agent est souvent celui qui voit la panne sur place, il doit pouvoir préciser sa description.
-L’équipement n’est pas modifiable : un incident déclaré sur le mauvais équipement a déjà mis cet
-équipement hors service, le changer demanderait de recalculer l’état de deux équipements.
-Le statut, le prestataire et les dates ne changent que par les actions dédiées (F7, F8), jamais par un formulaire libre.
+Le projet utilise deux @ControllerAdvice :
+
+- GestionErreurWeb (package controleur) affiche la page 404 pour une ressource
+  introuvable et une page « Action impossible » avec le statut 409 pour une
+  transition ou une évaluation interdite.
+- GestionErreurApi (package api) renvoie un ErreurApiDto en JSON avec le statut
+  404, 409 ou 400.
+
+Les services lèvent des exceptions métier personnalisées, avec des messages en
+français (RessourceIntrouvableException, TransitionIncidentInterditeException,
+EvaluationInterditeException…), sans connaître HTTP. La traduction en code HTTP
+est faite à un seul endroit pour chaque type de client : la même exception donne
+une page pour le navigateur et du JSON pour l’API, et les contrôleurs n’ont pas
+de try/catch. ResponseStatusException aurait obligé à mettre des statuts HTTP dans
+les services, ou un try/catch dans chaque contrôleur, et à dupliquer les messages.
+Aucune trace technique n’est affichée à l’écran.
+
+ResponseEntity n’est utilisé que lorsqu’il faut maîtriser la réponse : le statut 204
+de l’API de résolution et les en-têtes de l’export CSV.
+
+### Ce qui est modifiable — F6 (Tim)
+
+Seulement la description, par les 2 profils, tant que l'incident est pas résolu.
+C'est souvent l'agent qui voit la panne sur place donc il doit pouvoir preciser.
+L'equipement est pas modifiable : un incident declaré sur le mauvais equipement l'a deja mis
+hors service, le changer voudrait dire recalculer l'etat de 2 equipements en meme temps.
+Le statut, le prestataire et les dates changent que par les actions prévues pour (F7, F8), jamais par un formulaire libre.
 
 ### Authentification et sécurité
 
@@ -300,7 +386,7 @@ Le profil Spring demo, qui active l’initialisation, est distinct des profils u
 
 Une page Thymeleaf de connexion en français a été créée. Elle permet de saisir l’email et le mot de passe et affiche un message compréhensible en cas d’échec.
 Après connexion, l’utilisateur est redirigé vers l’accueil. Celui-ci utilise un fragment d’en-tête réutilisable affichant le prénom, le profil et le bouton de déconnexion.
-La page de supervision affiche les incidents actifs, leurs indicateurs d’urgence, des filtres par station et affectation, ainsi que des compteurs calculés sur les résultats filtrés. L’accès au détail d’un incident depuis ce tableau reste à intégrer.
+La page de supervision affiche les incidents actifs, leurs indicateurs d’urgence, des filtres par station et affectation, ainsi que des compteurs calculés sur les résultats filtrés. Chaque incident du tableau renvoie vers sa page de détail (F5).
 Le lien de supervision est masqué pour l’agent. Cette adaptation de l’interface complète le contrôle serveur ; elle ne le remplace pas.
 
 ### Règles métier complémentaires
@@ -352,7 +438,27 @@ aux deux profils tant que l’incident n’est pas résolu (voir « Ce qui est m
 
 La responsabilité unique est mise en œuvre dans la séparation entre accès aux données, authentification, configuration de sécurité et présentation des pages.
 L’inversion des dépendances est illustrée par l’injection de l’interface UtilisateurRepository et de PasswordEncoder. Le repository peut ainsi être remplacé par une simulation pendant les tests.
-Les autres principes SOLID seront analysés au fil de l’implémentation et justifiés dans le journal.
+La responsabilité unique se retrouve aussi dans le cycle de vie des incidents :
+l’entité Incident protège ses propres transitions, IncidentService coordonne
+plusieurs entités dans une transaction, ExportCsvService ne fait que construire le
+fichier CSV et CalculUrgenceService est le seul endroit qui connaît les seuils de 48 h et 72 h.
+L’inversion des dépendances permet de tester IncidentService et EvaluationService
+avec des repositories simulés et une horloge fixe (Clock injectée).
+
+Principes non appliqués volontairement :
+
+- Ouvert/fermé : le projet n’a pas de famille de comportements interchangeables
+  (une seule règle d’urgence, un seul format d’export). Créer des interfaces ou des
+  stratégies pour un seul cas serait artificiel. Le principe se retrouve seulement
+  dans la gestion des erreurs : une nouvelle exception métier s’ajoute dans un
+  @ControllerAdvice sans modifier les services.
+- Substitution de Liskov : le seul héritage du projet est UtilisateurConnecte, qui
+  étend User de Spring Security. Il peut remplacer un UserDetails partout sans changer
+  le comportement attendu (identifiant, mot de passe haché, rôles). Il n’y a pas d’autre
+  hiérarchie de classes, donc rien d’autre à vérifier.
+- Ségrégation des interfaces : les interfaces utilisées sont déjà petites (un repository
+  par entité, UserDetailsService avec une seule méthode). Aucune grande interface n’a
+  été créée, il n’y a donc rien à découper.
 
 ### Supervision
 
@@ -450,6 +556,7 @@ Elles ne sont pas toutes implémentées à ce stade.
 | GET | /api/stations/{id}/equipements | Lister les équipements d’une station | Les deux profils |
 | GET | /api/equipements/{id} | Consulter la fiche équipement et ses incidents | Les deux profils |
 | POST | /api/equipements/{id}/incidents | Déclarer un incident — F4 | Les deux profils |
+| GET | /api/incidents | Lister les incidents actifs avec leur urgence | Les deux profils |
 | GET | /api/incidents/{id} | Consulter le détail d’un incident — F5 | Les deux profils |
 | PATCH | /api/incidents/{id}/description | Modifier la description — F6 | Selon le déclarant, le profil et le statut |
 | PUT | /api/incidents/{id}/prestataire | Affecter ou réaffecter un prestataire — F7 | Responsable |
@@ -481,8 +588,9 @@ Le responsable peut modifier la description de tout incident non résolu.
 L’affectation, la réaffectation, la résolution et l’évaluation lui sont réservées.
 
 Les autorisations du périmètre réalisé sont vérifiées côté serveur.
-Les droits décrits pour les autres routes constituent le contrat prévu
-et restent à appliquer et à tester lors de leur réalisation.
+Les routes REST de déclaration, modification, affectation, historique
+et évaluation n’ont pas été réalisées : ces fonctionnalités passent par les
+pages web (F4 à F10), qui appellent les mêmes services et sont testées dans IncidentWebTest.
 Les contrôleurs REST réutilisent les services métier utilisés ou prévus
 pour les pages Thymeleaf pour éviter de dupliquer les règles et les transactions.
 
@@ -532,10 +640,19 @@ Le périmètre REST actuellement réalisé comprend :
 
 - La fiche d’un équipement avec ses incidents.
 
+- La liste des incidents actifs avec leur ancienneté et leur niveau d’urgence (GET /api/incidents).
+
+- Le détail d’un incident, y compris résolu (GET /api/incidents/{id}), avec 404 en JSON si l’identifiant n’existe pas.
+
 - La résolution d’un incident par le responsable.
 
-Les autres routes constituent le contrat commun prévu pour une extension
-de l’API. Leur présence dans ce document ne signifie pas qu’elles sont réalisées.
+La liste et le détail sont testés dans IncidentApiConsultationTest (4 tests) :
+liste limitée aux incidents actifs, détail avec la station et l’urgence,
+404 en JSON pour un incident inexistant, redirection vers /login sans connexion.
+
+Les autres routes du tableau ne sont pas réalisées dans l’API : elles
+restent une piste d’extension. Les fonctionnalités correspondantes existent
+dans les pages web.
 
 #### Réponses JSON du périmètre initial F12
 
@@ -650,7 +767,7 @@ Une requête de modification sans jeton CSRF valide peut être refusée
 avec le statut 403 avant la vérification de l’authentification.
 La redirection vers /login avec le statut 302 est attendue sur une
 consultation anonyme et sur une modification anonyme munie d’un jeton CSRF valide.
-Les tests correspondants ont été adaptés ; leur nouvelle exécution reste à confirmer.
+Les tests correspondants ont été adaptés et relancés : 12 tests API réussis, aucun échec.
 
 ## LOT ALPHA
 
@@ -723,42 +840,68 @@ d’heure. Les statistiques sont actualisées au rechargement de la page.
 
 #### Objectif
 
-Permettre au responsable de récupérer l’historique des incidents résolus
-dans un tableur, par exemple pour un bilan mensuel avec un prestataire.
+Que le responsable puisse recuperer l'historique des incidents résolus dans un tableur,
+par exemple pour faire un bilan du mois avec un prestataire.
 
 #### Réalisation
 
-Un lien « Télécharger l’historique (CSV) » sur la page historique appelle
-GET /incidents/historique/export. Le fichier contient une ligne par incident
-résolu, dans le même ordre que la page (plus récent d’abord), avec la station,
-l’équipement, la description, les dates d’ouverture et de résolution,
-le prestataire et la note.
+Sur la page historique il y a un bouton « Télécharger l’historique (CSV) » qui appelle
+GET /incidents/historique/export. Le fichier a une ligne par incident résolu, dans le meme
+ordre que la page (plus récent d'abord), avec la station, l'equipement, la description,
+les dates d'ouverture et de resolution, le prestataire et la note.
 
 #### Choix techniques
 
-- Le séparateur est le point-virgule, que Excel en français ouvre directement en colonnes.
-- Une valeur qui contient un point-virgule ou des guillemets est mise entre guillemets,
-  et les guillemets intérieurs sont doublés, comme le prévoit le format CSV.
-- Le fichier commence par un BOM UTF-8 pour que Excel affiche correctement les accents.
-- La construction du fichier est dans ExportCsvService, le contrôleur ne fait que l’envoyer.
-- Le contrôleur renvoie un ResponseEntity car il faut régler deux en-têtes :
-  le type text/csv et le nom du fichier téléchargé (Content-Disposition).
-- Aucune bibliothèque ajoutée : le format reste simple et un StringBuilder suffit.
+- separateur point-virgule, c'est ce que Excel en francais ouvre direct en colonnes (la virgule sert pour les decimales)
+- si une valeur contient un ; ou des guillemets on la met entre guillemets et on double ceux qui sont dedans, c'est la regle du format CSV
+- le fichier commence par un BOM UTF-8 sinon Excel casse les accents
+- le fichier est construit dans ExportCsvService, le controleur fait juste l'envoyer
+- le controleur renvoie un ResponseEntity parce qu'il faut regler 2 en-tetes : le type text/csv et le nom du fichier (Content-Disposition)
+- pas de librairie en plus, le format est simple et un StringBuilder suffit
 
 #### Essais et résultats
 
-ExportCsvServiceTest vérifie l’en-tête, le format des dates et l’échappement
-d’une description contenant un point-virgule et des guillemets.
-IncidentWebTest vérifie que le téléchargement renvoie un fichier text/csv.
+ExportCsvServiceTest verifie l'en-tete, le format des dates et l'echappement d'une description
+avec un point-virgule et des guillemets.
+IncidentWebTest verifie que le telechargement renvoie bien un fichier text/csv.
 
 #### Limites
 
-L’export reprend tout l’historique, sans filtre par période ou par station.
+L'export prend tout l'historique, il y a pas de filtre par periode ou par station.
 
 ## BILAN
 
-Développeurs:
+### Tim HRDY
 
-- Yoni ATLAN
+#### Contribution
 
-- Tim HRDY
+- la partie metier du cycle de vie des incidents : IncidentService (declarer, modifier la description, affecter, resoudre avec la remise en service de l'equipement), EvaluationService et leurs tests
+- les pages F4 a F10 : detail d'un incident, formulaires de declaration, modification et evaluation, affectation et resolution, historique
+- la gestion des erreurs des pages (404 et 409 dans GestionErreurWeb) et les droits de ces pages dans ConfigurationSecurite
+- la base H2 pour lancer les tests sans MariaDB et les tests MockMvc (IncidentWebTest)
+- la consultation des incidents dans l'API : GET /api/incidents et GET /api/incidents/{id} (F12)
+- le lot alpha export CSV
+- le nouveau design commun a toutes les pages (stationops.css) et le deploiement sur Railway
+
+#### Plus grande difficulté
+
+Le open-in-view=false : quand une page affiche la station ou le prestataire d'un incident, les relations
+en LAZY seraient plus chargées et la page planterait (LazyInitializationException). On l'a reglé avec des requetes JPQL
+en JOIN FETCH (trouverDetail, trouverHistorique) et des DTO, comme ca la vue touche plus aux entités.
+L'autre souci c'etait les conflits de merge sur dev quand on modifiait les memes fichiers en meme temps
+(IncidentRepository et ses tests), on les a reglé en gardant les 2 requetes.
+
+#### Pas réalisé
+
+- les routes REST F4, F6, F7, F9 et F10 du contrat de l'API, ces fonctionnalités passent par les pages web
+- un filtre par periode ou par station sur l'export CSV
+
+#### 3 points a retenir
+
+- mettre les regles dans le modele et les services et pas dans les controleurs, ca permet de les tester sans lancer l'appli
+- injecter l'horloge (Clock) pour tester les seuils de temps sans attendre 48 h
+- un @ControllerAdvice evite de mettre des try/catch partout et garde les messages d'erreur au meme endroit
+
+### Yoni ATLAN
+
+À compléter par Yoni.

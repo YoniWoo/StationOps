@@ -1,0 +1,1012 @@
+/* ==========================================================
+   StationOps - feuille de style commune
+   idée : un poste de controle de metro, calme et précis
+   tout est gris, la couleur sert seulement a dire l'urgence
+   ========================================================== */
+
+/* ---------- 0. polices (fichiers dans static/fonts, pas besoin d'internet pendant la demo) ---------- */
+@font-face {
+    font-family: "IBM Plex Sans";
+    font-weight: 400;
+    font-display: swap;
+    src: url("../fonts/ibm-plex-sans-400.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "IBM Plex Sans";
+    font-weight: 500;
+    font-display: swap;
+    src: url("../fonts/ibm-plex-sans-500.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "IBM Plex Sans";
+    font-weight: 600;
+    font-display: swap;
+    src: url("../fonts/ibm-plex-sans-600.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "IBM Plex Mono";
+    font-weight: 400;
+    font-display: swap;
+    src: url("../fonts/ibm-plex-mono-400.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "IBM Plex Mono";
+    font-weight: 500;
+    font-display: swap;
+    src: url("../fonts/ibm-plex-mono-500.woff2") format("woff2");
+}
+
+/* ---------- 1. variables ---------- */
+:root {
+    /* gris neutres (fond, surfaces, textes) */
+    --fond: #fafafa;
+    --carte: #ffffff;
+    --releve: #f4f4f5;
+    --trait: rgba(23, 23, 23, 0.08);
+    --texte: #171717;
+    --texte-second: #525252;
+    --texte-discret: #737373;
+
+    /* une seule couleur d'accent : le bleu cobalt des plans de metro */
+    --accent: #1f4fd1;
+    --accent-fond: #eef2fd;
+
+    /* couleurs d'urgence RG3 / RG4, elles ont un sens donc on les garde a part */
+    --vert: #16a34a;
+    --orange: #d97706;
+    --rouge: #dc2626;
+    --affecte: #1f4fd1;
+
+    --police: "IBM Plex Sans", system-ui, sans-serif;
+    --police-chiffres: "IBM Plex Mono", ui-monospace, monospace;
+
+    --rayon-carte: 12px;
+    --rayon-champ: 8px;
+    --ombre: 0 1px 2px rgba(23, 23, 23, 0.05);
+
+    --courbe: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* ---------- 2. base ---------- */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: var(--police);
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--texte);
+    background: var(--fond);
+    -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, p {
+    margin: 0;
+}
+
+h1 {
+    font-size: 28px;
+    line-height: 32px;
+    font-weight: 500;
+}
+
+h2 {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* tous les chiffres et references en mono, alignés en colonne */
+.mono {
+    font-family: var(--police-chiffres);
+    font-size: 13px;
+}
+
+/* chiffres alignés en colonne (meme largeur pour chaque chiffre) */
+.chiffres {
+    font-variant-numeric: tabular-nums;
+}
+
+.discret {
+    color: var(--texte-discret);
+}
+
+.second {
+    color: var(--texte-second);
+}
+
+.icone {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+}
+
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ---------- 3. mise en page ---------- */
+.app {
+    display: grid;
+    grid-template-columns: 248px minmax(0, 1fr);
+    min-height: 100vh;
+}
+
+h2.titre-section {
+    margin: 32px 0 12px;
+}
+
+p + p {
+    margin-top: 8px;
+}
+
+.contenu {
+    width: 100%;
+    max-width: 1440px;
+    padding: 0 32px 64px;
+}
+
+/* ---------- 4. menu lateral ---------- */
+.menu {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--carte);
+    border-right: 1px solid var(--trait);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 36px;
+    padding: 0 8px;
+    margin-bottom: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--texte);
+}
+
+.logo:hover {
+    text-decoration: none;
+}
+
+/* le logo est un panneau de station : carré plein avec la lettre */
+.logo-panneau {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+    background: var(--texte);
+}
+
+.menu-lien {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 36px;
+    padding: 0 8px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--texte-second);
+    transition: background-color 120ms var(--courbe), color 120ms var(--courbe);
+}
+
+.menu-lien:hover {
+    color: var(--texte);
+    background: var(--releve);
+    text-decoration: none;
+}
+
+/* page courante : juste une surface un peu plus foncée et un trait */
+.menu-lien.actif {
+    color: var(--texte);
+    background: var(--releve);
+    border-color: var(--trait);
+}
+
+.menu-compteur {
+    margin-left: auto;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--texte-discret);
+}
+
+.menu-section {
+    margin: 24px 8px 8px;
+    font-size: 12px;
+    color: var(--texte-discret);
+}
+
+/* ---------- 5. barre du haut : Bonjour Prenom (profil) | Deconnectez-vous (F1) ---------- */
+.barre-haut {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    height: 56px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--trait);
+}
+
+.ariane {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--texte-discret);
+}
+
+.ariane a {
+    color: var(--texte-discret);
+}
+
+.session {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--texte-second);
+}
+
+.session-separateur {
+    color: #d4d4d4;
+}
+
+.lien-bouton {
+    padding: 0;
+    border: 0;
+    font: inherit;
+    color: var(--texte);
+    background: none;
+    cursor: pointer;
+}
+
+.lien-bouton:hover {
+    text-decoration: underline;
+}
+
+/* ---------- 6. titre de page ---------- */
+.entete-page {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.sous-titre {
+    margin-top: 8px;
+    color: var(--texte-second);
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* ---------- 7. boutons ---------- */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 36px;
+    padding: 0 16px;
+    border: 1px solid var(--trait);
+    border-radius: var(--rayon-champ);
+    font: inherit;
+    font-weight: 500;
+    color: var(--texte);
+    background: var(--carte);
+    box-shadow: var(--ombre);
+    cursor: pointer;
+    transition: background-color 120ms var(--courbe), transform 120ms var(--courbe);
+}
+
+.btn:hover {
+    background: var(--releve);
+    text-decoration: none;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+/* action principale : fond encre, texte blanc */
+.btn-principal {
+    color: #ffffff;
+    border-color: transparent;
+    background: var(--texte);
+}
+
+.btn-principal:hover {
+    background: #2b2b2b;
+}
+
+.btn-bloc {
+    width: 100%;
+}
+
+.btn[disabled] {
+    color: var(--texte-discret);
+    background: var(--releve);
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ---------- 8. cartes et grilles ---------- */
+.carte {
+    padding: 20px;
+    border: 1px solid var(--trait);
+    border-radius: var(--rayon-carte);
+    background: var(--carte);
+}
+
+.carte-entete {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.grille-chiffres {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.grille-principale {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 24px;
+    align-items: start;
+}
+
+.colonne {
+    display: grid;
+    gap: 12px;
+}
+
+.grille-principale > *,
+.colonne > * {
+    min-width: 0;
+}
+
+/* ---------- 9. chiffres de la supervision ---------- */
+.chiffre-libelle {
+    color: var(--texte-second);
+}
+
+.chiffre-valeur {
+    margin-top: 12px;
+    font-size: 32px;
+    line-height: 32px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+}
+
+.chiffre-legende {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--texte-discret);
+}
+
+/* le seul chiffre en couleur de l'ecran : ceux qui attendent depuis 72 h ou plus */
+.chiffre-alerte .chiffre-valeur {
+    color: var(--rouge);
+}
+
+/* ---------- 10. statut d'urgence : un point + un mot, pas de pastille ---------- */
+.statut {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.statut::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: currentColor;
+}
+
+.statut-vert::before { background: var(--vert); }
+.statut-orange::before { background: var(--orange); }
+.statut-rouge::before { background: var(--rouge); }
+.statut-resolu::before { background: #a3a3a3; }
+
+/* RG4 : affecté = carré vide bleu, on voit tout de suite que ce n'est pas une urgence */
+.statut-affecte::before {
+    background: transparent;
+    box-shadow: inset 0 0 0 2px var(--affecte);
+}
+
+/* ---------- 11. la regle de temps : signature de l'app ----------
+   une barre de 0 a 96 h avec deux reperes a 48 h et 72 h,
+   comme sur un tableau de controle */
+.regle {
+    position: relative;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--releve);
+}
+
+.regle-remplie {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 2px;
+    background: #a3a3a3;
+}
+
+.regle-vert .regle-remplie { background: var(--vert); }
+.regle-orange .regle-remplie { background: var(--orange); }
+.regle-rouge .regle-remplie { background: var(--rouge); }
+
+/* les reperes 48 h et 72 h : 48/96 = 50 % et 72/96 = 75 % */
+.regle::before,
+.regle::after {
+    content: "";
+    position: absolute;
+    top: -3px;
+    bottom: -3px;
+    width: 1px;
+    background: var(--texte-discret);
+}
+
+.regle::before { left: 50%; }
+.regle::after { left: 75%; }
+
+.regle-grande {
+    height: 8px;
+    border-radius: 4px;
+}
+
+.regle-grande .regle-remplie {
+    border-radius: 4px;
+}
+
+.regle-grande::before,
+.regle-grande::after {
+    top: -4px;
+    bottom: -4px;
+}
+
+.regle-graduation {
+    position: relative;
+    height: 16px;
+    margin-top: 8px;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--texte-discret);
+}
+
+.regle-graduation span {
+    position: absolute;
+    transform: translateX(-50%);
+}
+
+.regle-graduation span:first-child {
+    transform: none;
+}
+
+/* ---------- 12. filtres ---------- */
+.filtres {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.segments {
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--trait);
+    border-radius: var(--rayon-champ);
+    background: var(--releve);
+}
+
+.segments a {
+    padding: 6px 12px;
+    border-radius: 6px;
+    color: var(--texte-second);
+    transition: background-color 120ms var(--courbe), color 120ms var(--courbe);
+}
+
+.segments a:hover {
+    color: var(--texte);
+    text-decoration: none;
+}
+
+.segments a.actif {
+    color: var(--texte);
+    background: var(--carte);
+    box-shadow: var(--ombre);
+}
+
+.champ {
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid var(--trait);
+    border-radius: var(--rayon-champ);
+    font: inherit;
+    color: var(--texte);
+    background: var(--carte);
+}
+
+textarea.champ {
+    height: auto;
+    padding: 8px 12px;
+    resize: vertical;
+}
+
+/* ---------- 13. tableau ---------- */
+.tableau {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tableau th {
+    height: 36px;
+    padding: 0 12px;
+    text-align: left;
+    font-weight: 400;
+    color: var(--texte-discret);
+    border-bottom: 1px solid var(--trait);
+    white-space: nowrap;
+}
+
+.tableau td {
+    height: 56px;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--trait);
+    white-space: nowrap;
+}
+
+.tableau tbody tr {
+    transition: background-color 120ms var(--courbe);
+}
+
+.tableau tbody tr:hover {
+    background: var(--fond);
+}
+
+.tableau tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.tableau .large {
+    white-space: normal;
+    min-width: 200px;
+}
+
+.tableau .droite {
+    text-align: right;
+}
+
+.incident-titre {
+    color: var(--texte);
+    font-weight: 500;
+}
+
+.incident-meta {
+    margin-top: 2px;
+    font-size: 13px;
+    color: var(--texte-discret);
+}
+
+.colonne-duree {
+    width: 160px;
+}
+
+.duree {
+    display: grid;
+    gap: 8px;
+}
+
+/* ---------- 14. liste par station (barres fines) ---------- */
+.classement {
+    display: grid;
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.classement-ligne {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.barre-fine {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--releve);
+}
+
+.barre-fine div {
+    height: 100%;
+    border-radius: 2px;
+    background: #a3a3a3;
+}
+
+.barre-fine .premier {
+    background: var(--texte);
+}
+
+.legende {
+    display: grid;
+    gap: 8px;
+    margin: 16px 0 0;
+    padding: 16px 0 0;
+    list-style: none;
+    border-top: 1px solid var(--trait);
+    color: var(--texte-second);
+}
+
+/* ---------- 15. page detail ---------- */
+.infos {
+    display: grid;
+    grid-template-columns: 140px minmax(0, 1fr);
+    gap: 12px 16px;
+    margin: 0;
+}
+
+.infos dt {
+    color: var(--texte-discret);
+}
+
+.infos dd {
+    margin: 0;
+}
+
+.temps-ecoule {
+    font-size: 48px;
+    line-height: 48px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+}
+
+.temps-ecoule small {
+    font-size: 20px;
+    color: var(--texte-discret);
+}
+
+.formulaire {
+    display: grid;
+    gap: 16px;
+}
+
+.formulaire label {
+    display: grid;
+    gap: 8px;
+    color: var(--texte-second);
+}
+
+/* note de 1 a 5 : des cases numérotées plutot que des etoiles */
+.notes {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.notes input {
+    position: absolute;
+    opacity: 0;
+}
+
+.notes label {
+    display: grid;
+    place-items: center;
+    height: 36px;
+    border: 1px solid var(--trait);
+    border-radius: 6px;
+    font-variant-numeric: tabular-nums;
+    color: var(--texte-second);
+    cursor: pointer;
+    transition: background-color 120ms var(--courbe), color 120ms var(--courbe);
+}
+
+.notes input:checked + label {
+    color: #ffffff;
+    background: var(--texte);
+}
+
+.notes input:disabled + label {
+    cursor: not-allowed;
+    color: #c4c4c4;
+}
+
+.aide {
+    font-size: 13px;
+    color: var(--texte-discret);
+}
+
+.alerte {
+    padding: 12px;
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    border-radius: var(--rayon-champ);
+    color: #b91c1c;
+    background: #fef2f2;
+}
+
+/* ---------- 16. connexion ---------- */
+.page-connexion {
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+    padding: 24px;
+}
+
+.carte-connexion {
+    width: 100%;
+    max-width: 380px;
+    padding: 32px;
+}
+
+.carte-connexion .logo {
+    padding: 0;
+    margin-bottom: 32px;
+}
+
+/* ---------- 17. mouvement : une seule entrée douce au chargement ---------- */
+.entree {
+    animation: entree 240ms var(--courbe) both;
+}
+
+@keyframes entree {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* ---------- 18. mobile ---------- */
+.bouton-menu {
+    display: none;
+}
+
+@media (max-width: 1200px) {
+    .grille-principale {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    .app {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* le menu sort de la gauche quand on clique sur le bouton */
+    .menu {
+        position: fixed;
+        z-index: 20;
+        left: 0;
+        width: 264px;
+        box-shadow: 0 8px 24px rgba(23, 23, 23, 0.12);
+        transform: translateX(-100%);
+        transition: transform 200ms var(--courbe);
+    }
+
+    .menu.ouvert {
+        transform: none;
+    }
+
+    .bouton-menu {
+        display: inline-flex;
+        width: 36px;
+        padding: 0;
+    }
+
+    .contenu {
+        padding: 0 16px 48px;
+    }
+
+    .grille-chiffres {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .cacher-mobile {
+        display: none;
+    }
+
+    /* sur telephone le tableau garde 3 colonnes et la description passe a la ligne */
+    .tableau th,
+    .tableau td {
+        padding: 0 8px;
+    }
+
+    .tableau .large {
+        min-width: 0;
+    }
+
+    .colonne-duree {
+        width: 96px;
+    }
+
+    .statut-texte {
+        display: none;
+    }
+
+    .barre-haut .ariane span {
+        display: none;
+    }
+
+    .session-profil {
+        display: none;
+    }
+}
+
+/* ---------- 19. éléments communs aux pages ---------- */
+
+/* liste de liens (stations) */
+.liste-liens {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.liste-liens li + li {
+    border-top: 1px solid var(--trait);
+}
+
+.liste-liens a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 48px;
+    color: var(--texte);
+}
+
+.liste-liens a:hover {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+/* formulaires des incidents */
+.formulaire-page {
+    max-width: 640px;
+}
+
+.champ-bloc {
+    width: 100%;
+}
+
+.erreur-champ {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #b91c1c;
+}
+
+.info {
+    padding: 12px;
+    border: 1px solid var(--trait);
+    border-radius: var(--rayon-champ);
+    color: var(--texte-second);
+    background: var(--releve);
+}
+
+.pied-page {
+    margin-top: 24px;
+}
+
+.accueil-raccourcis {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+}
+
+.accueil-raccourcis a {
+    display: block;
+    color: var(--texte);
+}
+
+.accueil-raccourcis a:hover {
+    text-decoration: none;
+    background: var(--fond);
+}
+
+.accueil-raccourcis p {
+    margin-top: 8px;
+    color: var(--texte-discret);
+}
+
+/* statistiques : barres horizontales, une seule couleur (accent) pour la valeur qui compte */
+.barres {
+    display: grid;
+    gap: 16px;
+    margin: 16px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ligne-barre {
+    display: grid;
+    grid-template-columns: minmax(140px, 200px) minmax(0, 1fr) 120px;
+    align-items: center;
+    gap: 16px;
+}
+
+.piste {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--releve);
+}
+
+.piste div {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--texte);
+}
+
+.valeur {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.valeur small {
+    display: block;
+    font-size: 12px;
+    color: var(--texte-discret);
+}
+
+@media (max-width: 650px) {
+    .ligne-barre {
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+    }
+
+    .piste {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+}

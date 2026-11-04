@@ -1,30 +1,32 @@
 <!DOCTYPE html>
 <html lang="fr" xmlns:th="http://www.thymeleaf.org">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>StationOps — Stations</title>
-</head>
-<body>
-<header th:replace="~{fragments/entete
-            :: entete(${utilisateurConnecte})}"></header>
+<head th:replace="~{fragments/entete :: tete('Stations')}"></head>
+<body class="app">
+<aside th:replace="~{fragments/entete :: menu(${utilisateurConnecte}, 'stations')}"></aside>
 
-<main>
-  <h1>Stations du réseau</h1>
+<main class="contenu">
+  <header th:replace="~{fragments/entete :: barre(${utilisateurConnecte}, 'Stations')}"></header>
 
-  <p th:if="${#lists.isEmpty(stations)}">
-    Aucune station n’est disponible.
-  </p>
+  <div class="entree">
+    <div class="entete-page">
+      <h1>Stations du réseau</h1>
+    </div>
 
-  <ul th:unless="${#lists.isEmpty(stations)}">
-    <li th:each="station : ${stations}">
-      <a th:href="@{/stations/{id}/equipements(id=${station.id})}"
-         th:text="${station.nom}">
-      </a>
-    </li>
-  </ul>
+    <section class="carte formulaire-page">
+      <p class="info" th:if="${#lists.isEmpty(stations)}">
+        Aucune station n’est disponible
+      </p>
 
-  <a th:href="@{/}">Retour à l’accueil</a>
+      <ul class="liste-liens" th:unless="${#lists.isEmpty(stations)}">
+        <li th:each="station : ${stations}">
+          <a th:href="@{/stations/{id}/equipements(id=${station.id})}">
+            <span th:text="${station.nom}"></span>
+            <span class="discret">Voir les équipements</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+  </div>
 </main>
 </body>
 </html>
