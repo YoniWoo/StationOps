@@ -1,5 +1,6 @@
 package altn72.tpfilrouge.service;
 
+import altn72.tpfilrouge.dto.IncidentDetailDto;
 import altn72.tpfilrouge.exception.RessourceIntrouvableException;
 import altn72.tpfilrouge.exception.TransitionIncidentInterditeException;
 import altn72.tpfilrouge.modele.*;
@@ -154,8 +155,9 @@ public class IncidentServiceTest {
         Incident incident = new Incident(
                 "Ascenseur immobilisé", equipement, agent, MAINTENANT.minusHours(5));
         when(incidentRepository.findById(1)).thenReturn(Optional.of(incident));
-        when(incidentRepository.existsByEquipementIdAndStatutNot(any(), eq(StatutIncident.RESOLU)))
-                .thenReturn(false);
+        when(incidentRepository.compterIncidentsActifsParEquipement(
+                equipement.getId()))
+                .thenReturn(0L);
 
         incidentService.resoudreIncident(1);
 
@@ -172,8 +174,9 @@ public class IncidentServiceTest {
         Incident incident = new Incident(
                 "Ascenseur immobilisé", equipement, agent, MAINTENANT.minusHours(5));
         when(incidentRepository.findById(1)).thenReturn(Optional.of(incident));
-        when(incidentRepository.existsByEquipementIdAndStatutNot(any(), eq(StatutIncident.RESOLU)))
-                .thenReturn(true);
+        when(incidentRepository.compterIncidentsActifsParEquipement(
+                equipement.getId()))
+                .thenReturn(1L);
 
         incidentService.resoudreIncident(1);
 
@@ -231,6 +234,21 @@ public class IncidentServiceTest {
     }
 
     @Test
+    void consulterDetailDonneLaStationEtLaDuree()
+    {
+        Incident incident = new Incident(
+                "Ascenseur immobilisé", equipement, agent, MAINTENANT.minusMinutes(47 * 60 + 30));
+        when(incidentRepository.trouverDetail(1)).thenReturn(Optional.of(incident));
+
+        IncidentDetailDto detail = incidentService.consulterDetail(1);
+
+        assertEquals("République", detail.stationNom());
+        assertEquals(47, detail.dureeHeures());
+        assertEquals(30, detail.dureeMinutes());
+        assertNull(detail.prestataireNom());
+    }
+
+    @Test
     void trouverUnIncidentInexistantLeveUneException()
     {
         when(incidentRepository.findById(99)).thenReturn(Optional.empty());
@@ -240,4 +258,5 @@ public class IncidentServiceTest {
                 () -> incidentService.trouverIncident(99)
         );
     }
+
 }

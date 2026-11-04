@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StationOps — Modifier un incident</title>
+</head>
+<body>
+<header th:replace="~{fragments/entete
+            :: entete(${utilisateurConnecte})}"></header>
+
+<main>
+  <h1 th:text="|Modifier l’incident ${incident.id}|">Modifier l’incident</h1>
+
+  <p>
+    Équipement :
+    <strong th:text="|${incident.equipementLibelle} (${incident.equipementReference})|"></strong>,
+    station <span th:text="${incident.stationNom}"></span>
+  </p>
+
+  <p th:if="${incident.resoluLe != null}" role="alert">
+    Cet incident est résolu, sa description ne peut plus être modifiée.
+  </p>
+
+  <form th:if="${incident.resoluLe == null}"
+        th:action="@{/incidents/{id}/modifier(id=${incident.id})}"
+        th:object="${formulaire}" method="post">
+    <p>
+      <label for="description">Description de la panne</label><br>
+      <textarea id="description" th:field="*{description}"
+                rows="5" cols="60" maxlength="2000"></textarea>
+    </p>
+    <p th:if="${#fields.hasErrors('description')}"
+       th:errors="*{description}" role="alert"></p>
+
+    <button type="submit">Enregistrer</button>
+  </form>
+
+  <p>
+    <a th:href="@{/incidents/{id}(id=${incident.id})}">Retour au détail</a>
+  </p>
+</main>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StationOps — Historique des incidents résolus</title>
+</head>
+<body>
+<header th:replace="~{fragments/entete
+            :: entete(${utilisateurConnecte})}"></header>
+
+<main>
+  <h1>Historique des incidents résolus</h1>
+  <p>Du plus récent au plus ancien, selon la date de résolution.</p>
+
+  <p th:unless="${#lists.isEmpty(incidents)}">
+    <a th:href="@{/incidents/historique/export}">Télécharger l’historique (CSV)</a>
+  </p>
+
+  <p th:if="${#lists.isEmpty(incidents)}">
+    Aucun incident résolu pour le moment.
+  </p>
+
+  <table th:unless="${#lists.isEmpty(incidents)}">
+    <thead>
+    <tr>
+      <th scope="col">Incident</th>
+      <th scope="col">Station</th>
+      <th scope="col">Équipement</th>
+      <th scope="col">Description</th>
+      <th scope="col">Ouverture</th>
+      <th scope="col">Résolution</th>
+      <th scope="col">Prestataire</th>
+      <th scope="col">Note</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="incident : ${incidents}">
+      <td>
+        <a th:href="@{/incidents/{id}(id=${incident.id})}"
+           th:text="${incident.id}"></a>
+      </td>
+      <td th:text="${incident.stationNom}"></td>
+      <td th:text="${incident.equipementReference}"></td>
+      <td th:text="${incident.description}"></td>
+      <td th:text="${#temporals.format(incident.ouvertLe, 'dd/MM/yyyy HH:mm')}"></td>
+      <td th:text="${#temporals.format(incident.resoluLe, 'dd/MM/yyyy HH:mm')}"></td>
+      <td th:text="${incident.prestataireNom != null
+                    ? incident.prestataireNom : 'Intervention interne'}"></td>
+      <td th:text="${incident.note != null ? incident.note + ' / 5' : 'Non évalué'}"></td>
+    </tr>
+    </tbody>
+  </table>
+</main>
+</body>
+</html>

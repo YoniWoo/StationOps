@@ -1,5 +1,6 @@
 package altn72.tpfilrouge.service;
 
+import altn72.tpfilrouge.dto.IncidentHistoriqueDto;
 import altn72.tpfilrouge.exception.EvaluationInterditeException;
 import altn72.tpfilrouge.modele.Evaluation;
 import altn72.tpfilrouge.modele.Incident;
@@ -9,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 // Service pour evaluer le prestataire une fois l'incident résolu (F10)
@@ -57,5 +60,39 @@ public class EvaluationService
     public Optional<Evaluation> trouverEvaluation(Integer incidentId)
     {
         return evaluationRepository.findByIncidentId(incidentId);
+    }
+
+    // F9 + F10 : l'historique des résolus avec la note du prestataire quand il y en a une
+    // l'ordre (plus récent d'abord, RG7) vient de la requete de IncidentService
+    public List<IncidentHistoriqueDto> listerHistoriqueAvecNotes()
+    {
+        List<IncidentHistoriqueDto> lignes = new ArrayList<>();
+
+        for (Incident incident : incidentService.listerHistorique())
+        {
+            Integer note = null;
+            Optional<Evaluation> evaluation = trouverEvaluation(incident.getId());
+            if (evaluation.isPresent())
+            {
+                note = evaluation.get().getNote();
+            }
+
+            String prestataireNom = null;
+            if (incident.getPrestataire() != null)
+            {
+                prestataireNom = incident.getPrestataire().getNom();
+            }
+
+            lignes.add(new IncidentHistoriqueDto(
+                    incident.getId(),
+                    incident.getDescription(),
+                    incident.getEquipement().getStation().getNom(),
+                    incident.getEquipement().getReference(),
+                    prestataireNom,
+                    incident.getOuvertLe(),
+                    incident.getResoluLe(),
+                    note));
+        }
+        return lignes;
     }
 }

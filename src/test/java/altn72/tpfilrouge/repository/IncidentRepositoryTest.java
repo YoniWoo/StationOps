@@ -1,5 +1,6 @@
 package altn72.tpfilrouge.repository;
 
+import altn72.tpfilrouge.dto.IncidentsParStationDto;
 import altn72.tpfilrouge.modele.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -121,5 +122,92 @@ public class IncidentRepositoryTest {
         assertEquals(
                 List.of(nonAffecte, affecte),
                 incidentsActifs);
+    }
+    @Test
+    void comptageNatifCompteSeulementLesIncidentsActifsDeLEquipement()
+    {
+        incidentRepository.save(new Incident(
+                "Première panne active",
+                equipement,
+                agent,
+                DEBUT));
+
+        incidentRepository.save(new Incident(
+                "Deuxième panne active",
+                equipement,
+                agent,
+                DEBUT.plusHours(1)));
+
+        creerIncidentResolu(
+                "Ancienne panne réparée",
+                DEBUT.plusDays(1));
+
+        Equipement autreEquipement = equipementRepository.save(
+                new Equipement(
+                        "TEST-AUTRE-001",
+                        "Autre équipement",
+                        TypeEquipement.ASCENSEUR,
+                        equipement.getStation()));
+
+        incidentRepository.save(new Incident(
+                "Panne sur un autre équipement",
+                autreEquipement,
+                agent,
+                DEBUT));
+
+        assertEquals(
+                2L,
+                incidentRepository.compterIncidentsActifsParEquipement(
+                        equipement.getId()));
+    }
+    @Test
+    void statistiquesRegroupentLesActifsParStationSansLesResolus()
+    {
+        incidentRepository.save(new Incident(
+                "Première panne active",
+                equipement,
+                agent,
+                DEBUT));
+
+        incidentRepository.save(new Incident(
+                "Deuxième panne active",
+                equipement,
+                agent,
+                DEBUT.plusHours(1)));
+
+        creerIncidentResolu(
+                "Ancienne panne",
+                DEBUT.plusDays(1));
+
+        Station autreStation = stationRepository.save(
+                new Station("Autre station"));
+
+        Equipement autreEquipement = equipementRepository.save(
+                new Equipement(
+                        "STAT-ASC-002",
+                        "Autre ascenseur",
+                        TypeEquipement.ASCENSEUR,
+                        autreStation));
+
+        incidentRepository.save(new Incident(
+                "Panne dans l’autre station",
+                autreEquipement,
+                agent,
+                DEBUT));
+
+        List<IncidentsParStationDto> resultats = incidentRepository
+                .compterActifsParStation(StatutIncident.RESOLU);
+
+        assertEquals(
+                List.of(
+                        new IncidentsParStationDto(
+                                equipement.getStation().getId(),
+                                equipement.getStation().getNom(),
+                                2L),
+                        new IncidentsParStationDto(
+                                autreStation.getId(),
+                                autreStation.getNom(),
+                                1L)),
+                resultats);
     }
 }

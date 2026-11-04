@@ -80,6 +80,14 @@ public class InitialisationDonneesDemo implements CommandLineRunner {
                         "0100000000"
                 ));
 
+        // un 2e prestataire pour pouvoir montrer la reaffectation (F7)
+        prestataireRepository.save(
+                new Prestataire(
+                        "Rapid Dépannage",
+                        "interventions@rapid-depannage.test",
+                        "0100000001"
+                ));
+
         Equipement ascenseur = creerEquipement(
                 "REP-ASC-001", "Ascenseur accès principal",
                 TypeEquipement.ASCENSEUR, republique);

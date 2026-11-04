@@ -20,6 +20,12 @@
     <dt>État</dt>
     <dd th:text="${fiche.etat}"></dd>
   </dl>
+  <p>
+    <a th:href="@{/incidents/nouveau(equipementId=${fiche.id})}">
+      Déclarer un incident sur cet équipement
+    </a>
+  </p>
+
   <h2>Incidents en cours et passés</h2>
   <p th:if="${#lists.isEmpty(fiche.incidents)}">
     Aucun incident enregistré pour cet équipement.
@@ -36,7 +42,10 @@
     </thead>
     <tbody>
     <tr th:each="incident : ${fiche.incidents}">
-      <td th:text="${incident.id}"></td>
+      <td>
+        <a th:href="@{/incidents/{id}(id=${incident.id})}"
+           th:text="${incident.id}"></a>
+      </td>
       <td th:text="${incident.description}"></td>
       <td th:text="${incident.statut}"></td>
 
