@@ -10,11 +10,13 @@ import java.util.Objects;
 @Table(name = "incidents")
 public class Incident
 {
+    private static final int DESCRIPTION_MAXIMALE = 2000;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false, length = 2000)
+    @Column(nullable = false, length = DESCRIPTION_MAXIMALE)
     private String description;
 
     @Column(name = "ouvert_le", nullable = false)
@@ -106,15 +108,15 @@ public class Incident
     {
         if (description == null || description.isBlank())
         {
-            throw  new IllegalArgumentException(
+            throw new IllegalArgumentException(
                     "Description obligatoire");
         }
         String descriptionClean = description.strip();
 
-        if (descriptionClean.length() > 2000)
+        if (descriptionClean.length() > DESCRIPTION_MAXIMALE)
         {
             throw new IllegalArgumentException(
-                    "La description ne doit pas dépasser 200 caractères");
+                    "La description ne doit pas dépasser " + DESCRIPTION_MAXIMALE + " caractères");
         }
         return descriptionClean;
     }
