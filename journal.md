@@ -556,6 +556,7 @@ Elles ne sont pas toutes implémentées à ce stade.
 | GET | /api/stations/{id}/equipements | Lister les équipements d’une station | Les deux profils |
 | GET | /api/equipements/{id} | Consulter la fiche équipement et ses incidents | Les deux profils |
 | POST | /api/equipements/{id}/incidents | Déclarer un incident — F4 | Les deux profils |
+| GET | /api/incidents | Lister les incidents actifs avec leur urgence | Les deux profils |
 | GET | /api/incidents/{id} | Consulter le détail d’un incident — F5 | Les deux profils |
 | PATCH | /api/incidents/{id}/description | Modifier la description — F6 | Selon le déclarant, le profil et le statut |
 | PUT | /api/incidents/{id}/prestataire | Affecter ou réaffecter un prestataire — F7 | Responsable |
@@ -587,7 +588,7 @@ Le responsable peut modifier la description de tout incident non résolu.
 L’affectation, la réaffectation, la résolution et l’évaluation lui sont réservées.
 
 Les autorisations du périmètre réalisé sont vérifiées côté serveur.
-Les routes REST de déclaration, détail, modification, affectation, historique
+Les routes REST de déclaration, modification, affectation, historique
 et évaluation n’ont pas été réalisées : ces fonctionnalités passent par les
 pages web (F4 à F10), qui appellent les mêmes services et sont testées dans IncidentWebTest.
 Les contrôleurs REST réutilisent les services métier utilisés ou prévus
@@ -639,7 +640,15 @@ Le périmètre REST actuellement réalisé comprend :
 
 - La fiche d’un équipement avec ses incidents.
 
+- La liste des incidents actifs avec leur ancienneté et leur niveau d’urgence (GET /api/incidents).
+
+- Le détail d’un incident, y compris résolu (GET /api/incidents/{id}), avec 404 en JSON si l’identifiant n’existe pas.
+
 - La résolution d’un incident par le responsable.
+
+La liste et le détail sont testés dans IncidentApiConsultationTest (4 tests) :
+liste limitée aux incidents actifs, détail avec la station et l’urgence,
+404 en JSON pour un incident inexistant, redirection vers /login sans connexion.
 
 Les autres routes du tableau ne sont pas réalisées dans l’API : elles
 restent une piste d’extension. Les fonctionnalités correspondantes existent
@@ -870,6 +879,7 @@ L'export prend tout l'historique, il y a pas de filtre par periode ou par statio
 - les pages F4 a F10 : detail d'un incident, formulaires de declaration, modification et evaluation, affectation et resolution, historique
 - la gestion des erreurs des pages (404 et 409 dans GestionErreurWeb) et les droits de ces pages dans ConfigurationSecurite
 - la base H2 pour lancer les tests sans MariaDB et les tests MockMvc (IncidentWebTest)
+- la consultation des incidents dans l'API : GET /api/incidents et GET /api/incidents/{id} (F12)
 - le lot alpha export CSV
 - le nouveau design commun a toutes les pages (stationops.css) et le deploiement sur Railway
 
@@ -883,7 +893,7 @@ L'autre souci c'etait les conflits de merge sur dev quand on modifiait les memes
 
 #### Pas réalisé
 
-- les routes REST F4, F5, F6, F7, F9 et F10 du contrat de l'API, ces fonctionnalités passent par les pages web
+- les routes REST F4, F6, F7, F9 et F10 du contrat de l'API, ces fonctionnalités passent par les pages web
 - un filtre par periode ou par station sur l'export CSV
 
 #### 3 points a retenir
