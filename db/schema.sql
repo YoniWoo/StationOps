@@ -1,4 +1,9 @@
-CREATE DATABASE IF NOT EXISTS stationops
+-- Recree la base stationops de zero : toutes les tables et les donnees sont supprimees.
+-- Lancer ensuite l'application avec le profil demo pour recharger les donnees de demonstration
+-- (les dates sont recalculees a partir de l'heure du demarrage).
+DROP DATABASE IF EXISTS stationops;
+
+CREATE DATABASE stationops
     CHARACTER SET utf8mb4
     COLLATE utf8mb4_unicode_ci;
 
