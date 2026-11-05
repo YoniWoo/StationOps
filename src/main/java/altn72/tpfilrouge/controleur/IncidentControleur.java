@@ -176,9 +176,10 @@ public class IncidentControleur {
     @PostMapping("/{id}/affectation")
     public String affecterPrestataire(
             @PathVariable("id") Integer id,
-            @RequestParam("prestataireId") Integer prestataireId)
+            @RequestParam("prestataireId") Integer prestataireId,
+            @RequestParam(name = "confirmation", defaultValue = "false") boolean confirmation)
     {
-        incidentService.affecterPrestataire(id, prestataireId);
+        incidentService.affecterPrestataire(id, prestataireId, confirmation);
 
         return "redirect:/incidents/" + id;
     }

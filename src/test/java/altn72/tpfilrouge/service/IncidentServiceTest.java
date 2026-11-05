@@ -1,6 +1,7 @@
 package altn72.tpfilrouge.service;
 
 import altn72.tpfilrouge.dto.IncidentDetailDto;
+import altn72.tpfilrouge.exception.AffectationAConfirmerException;
 import altn72.tpfilrouge.exception.RessourceIntrouvableException;
 import altn72.tpfilrouge.exception.TransitionIncidentInterditeException;
 import altn72.tpfilrouge.modele.*;
@@ -29,6 +30,7 @@ public class IncidentServiceTest {
     private EquipementRepository equipementRepository;
     private UtilisateurRepository utilisateurRepository;
     private PrestataireRepository prestataireRepository;
+    private SurveillancePrestataireService surveillanceService;
     private IncidentService incidentService;
 
     private Equipement equipement;
@@ -41,6 +43,8 @@ public class IncidentServiceTest {
         equipementRepository = mock(EquipementRepository.class);
         utilisateurRepository = mock(UtilisateurRepository.class);
         prestataireRepository = mock(PrestataireRepository.class);
+        // par defaut aucun prestataire est sous surveillance (moyenne null)
+        surveillanceService = mock(SurveillancePrestataireService.class);
 
         // horloge bloquée sur MAINTENANT pour savoir exactement quelle date attendre
         Clock horloge = Clock.fixed(MAINTENANT.atZone(ZONE).toInstant(), ZONE);
@@ -51,6 +55,7 @@ public class IncidentServiceTest {
                 utilisateurRepository,
                 prestataireRepository,
                 new CalculUrgenceService(horloge),
+                surveillanceService,
                 horloge);
 
         equipement = new Equipement(
@@ -126,8 +131,8 @@ public class IncidentServiceTest {
         when(prestataireRepository.findById(1)).thenReturn(Optional.of(premier));
         when(prestataireRepository.findById(2)).thenReturn(Optional.of(second));
 
-        incidentService.affecterPrestataire(1, 1);
-        incidentService.affecterPrestataire(1, 2);
+        incidentService.affecterPrestataire(1, 1, false);
+        incidentService.affecterPrestataire(1, 2, false);
 
         assertEquals(StatutIncident.AFFECTE, incident.getStatut());
         assertSame(second, incident.getPrestataire());
@@ -145,7 +150,7 @@ public class IncidentServiceTest {
 
         assertThrows(
                 TransitionIncidentInterditeException.class,
-                () -> incidentService.affecterPrestataire(1, 1)
+                () -> incidentService.affecterPrestataire(1, 1, false)
         );
     }
 
@@ -248,6 +253,43 @@ public class IncidentServiceTest {
         assertEquals(30, detail.dureeMinutes());
         assertNull(detail.prestataireNom());
         assertEquals(NiveauUrgence.VERT, detail.urgence());
+    }
+
+    @Test
+    void affecterUnPrestataireSurveilleSansConfirmationEstRefuseEtRienNeChange()
+    {
+        Incident incident = new Incident(
+                "Portique bloqué", equipement, agent, MAINTENANT);
+        Prestataire dupont = new Prestataire("Dupont Réseaux", "contact@dupont.test", null);
+        when(incidentRepository.findById(1)).thenReturn(Optional.of(incident));
+        when(prestataireRepository.findById(3)).thenReturn(Optional.of(dupont));
+        when(surveillanceService.calculerMoyenne(3)).thenReturn(2.8);
+        when(surveillanceService.estSousSurveillance(2.8)).thenReturn(true);
+
+        AffectationAConfirmerException exception = assertThrows(
+                AffectationAConfirmerException.class,
+                () -> incidentService.affecterPrestataire(1, 3, false));
+
+        assertTrue(exception.getMessage().contains("surveillance"));
+        assertEquals(StatutIncident.NON_AFFECTE, incident.getStatut());
+        assertNull(incident.getPrestataire());
+    }
+
+    @Test
+    void affecterUnPrestataireSurveilleAvecConfirmationEstAccepte()
+    {
+        Incident incident = new Incident(
+                "Portique bloqué", equipement, agent, MAINTENANT);
+        Prestataire dupont = new Prestataire("Dupont Réseaux", "contact@dupont.test", null);
+        when(incidentRepository.findById(1)).thenReturn(Optional.of(incident));
+        when(prestataireRepository.findById(3)).thenReturn(Optional.of(dupont));
+        when(surveillanceService.calculerMoyenne(3)).thenReturn(2.8);
+        when(surveillanceService.estSousSurveillance(2.8)).thenReturn(true);
+
+        incidentService.affecterPrestataire(1, 3, true);
+
+        assertEquals(StatutIncident.AFFECTE, incident.getStatut());
+        assertSame(dupont, incident.getPrestataire());
     }
 
     @Test
