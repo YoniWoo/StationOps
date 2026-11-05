@@ -1,6 +1,5 @@
 package altn72.tpfilrouge.controleur;
 
-import altn72.tpfilrouge.exception.AffectationAConfirmerException;
 import altn72.tpfilrouge.exception.EquipementIntrouvableException;
 import altn72.tpfilrouge.exception.EvaluationInterditeException;
 import altn72.tpfilrouge.exception.RessourceIntrouvableException;
@@ -32,8 +31,7 @@ public class GestionErreurWeb {
     // on affiche le message en francais de l'exception, jamais la trace technique
     @ExceptionHandler({
             TransitionIncidentInterditeException.class,
-            EvaluationInterditeException.class,
-            AffectationAConfirmerException.class})
+            EvaluationInterditeException.class})
     @ResponseStatus(HttpStatus.CONFLICT)
     public String afficherActionImpossible(
             RuntimeException exception,

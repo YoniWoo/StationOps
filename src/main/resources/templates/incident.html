@@ -75,8 +75,12 @@
             </th:block>
 
             <dt>Prestataire</dt>
-            <dd th:classappend="${incident.prestataireNom == null} ? 'discret'"
-                th:text="${incident.prestataireNom != null ? incident.prestataireNom : 'Aucun prestataire affecté'}"></dd>
+            <dd th:if="${incident.prestataireNom == null}" class="discret">Aucun prestataire affecté</dd>
+            <dd th:if="${incident.prestataireNom != null}">
+              <span th:text="${incident.prestataireNom}"></span>
+              <span th:if="${incident.prestataireSousSurveillance}" class="statut statut-orange"
+                    style="margin-left: 8px">sous surveillance</span>
+            </dd>
 
             <dt>Évaluation</dt>
             <dd th:if="${evaluation != null}">
@@ -92,6 +96,19 @@
       <div class="colonne">
         <th:block th:if="${incident.resoluLe == null
                           and utilisateurConnecte.profil.name() == 'RESPONSABLE_EXPLOITATION'}">
+          <!-- PS5 : le service a refusé l'affectation, on demande de confirmer -->
+          <section class="carte" th:if="${confirmationMessage != null}">
+            <div class="carte-entete"><h2>Confirmation demandée</h2></div>
+            <p class="alerte" role="alert" th:text="${confirmationMessage}">Prestataire sous surveillance</p>
+            <form class="formulaire" style="margin-top: 16px"
+                  th:action="@{/incidents/{id}/affectation(id=${incident.id})}" method="post">
+              <input type="hidden" name="prestataireId" th:value="${confirmationPrestataireId}">
+              <input type="hidden" name="confirmation" value="true">
+              <button class="btn btn-principal btn-bloc" type="submit">Confirmer l’affectation</button>
+              <a class="btn btn-bloc" th:href="@{/incidents/{id}(id=${incident.id})}">Annuler</a>
+            </form>
+          </section>
+
           <section class="carte">
             <div class="carte-entete">
               <h2 th:text="${incident.prestataireNom == null ? 'Affecter un prestataire' : 'Réaffecter'}">Affecter un prestataire</h2>
@@ -100,7 +117,7 @@
               <select class="champ" id="prestataireId" name="prestataireId" aria-label="Prestataire" required>
                 <option th:each="prestataire : ${prestataires}"
                         th:value="${prestataire.id}"
-                        th:text="${prestataire.nom}"
+                        th:text="${prestataire.sousSurveillance ? prestataire.nom + ' (sous surveillance)' : prestataire.nom}"
                         th:selected="${prestataire.nom == incident.prestataireNom}"></option>
               </select>
               <button class="btn btn-principal btn-bloc" type="submit">Affecter</button>

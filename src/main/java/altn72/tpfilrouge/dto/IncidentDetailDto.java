@@ -17,6 +17,7 @@ public record IncidentDetailDto(
         String equipementLibelle,
         String stationNom,
         String prestataireNom,
+        boolean prestataireSousSurveillance,
         long dureeHeures,
         long dureeMinutes,
         NiveauUrgence urgence) {
