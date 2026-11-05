@@ -1,6 +1,7 @@
 package altn72.tpfilrouge.service;
 
 import altn72.tpfilrouge.dto.IncidentDetailDto;
+import altn72.tpfilrouge.exception.AffectationAConfirmerException;
 import altn72.tpfilrouge.exception.RessourceIntrouvableException;
 import altn72.tpfilrouge.modele.Equipement;
 import altn72.tpfilrouge.modele.Incident;
@@ -18,6 +19,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 
 // Service qui gere le cycle de vie des incidents
 // les regles sur un seul incident sont dans le modele, ici c'est ce qui touche plusieurs entitées
@@ -31,6 +33,7 @@ public class IncidentService
 
     // pour la couleur de la page detail, les seuils 48 h / 72 h restent a un seul endroit
     private final CalculUrgenceService calculUrgenceService;
+    private final SurveillancePrestataireService surveillanceService;
 
     // horloge injectée pour pouvoir fixer l'heure dans les tests
     private final Clock horloge;
@@ -41,6 +44,7 @@ public class IncidentService
             UtilisateurRepository utilisateurRepository,
             PrestataireRepository prestataireRepository,
             CalculUrgenceService calculUrgenceService,
+            SurveillancePrestataireService surveillanceService,
             Clock horloge)
     {
         this.incidentRepository = incidentRepository;
@@ -48,6 +52,7 @@ public class IncidentService
         this.utilisateurRepository = utilisateurRepository;
         this.prestataireRepository = prestataireRepository;
         this.calculUrgenceService = calculUrgenceService;
+        this.surveillanceService = surveillanceService;
         this.horloge = horloge;
     }
 
@@ -83,9 +88,12 @@ public class IncidentService
         Duration duree = calculerDureeOuverture(incident);
 
         String prestataireNom = null;
+        boolean prestataireSousSurveillance = false;
         if (incident.getPrestataire() != null)
         {
             prestataireNom = incident.getPrestataire().getNom();
+            prestataireSousSurveillance = surveillanceService.estSousSurveillance(
+                    incident.getPrestataire().getId());
         }
 
         return new IncidentDetailDto(
@@ -99,6 +107,7 @@ public class IncidentService
                 incident.getEquipement().getLibelle(),
                 incident.getEquipement().getStation().getNom(),
                 prestataireNom,
+                prestataireSousSurveillance,
                 duree.toHours(),
                 duree.toMinutesPart(),
                 calculUrgenceService.calculer(incident));
@@ -136,11 +145,25 @@ public class IncidentService
     }
 
     // F7 : marche aussi pour reaffecter, le modele refuse si l'incident est deja résolu (RG5)
+    // PS5 : si le prestataire est sous surveillance il faut confirmation=true,
+    // sinon on leve l'exception AVANT de toucher a l'incident donc rien est enregistré (RG10)
     @Transactional
-    public void affecterPrestataire(Integer incidentId, Integer prestataireId)
+    public void affecterPrestataire(Integer incidentId, Integer prestataireId, boolean confirmation)
     {
         Incident incident = trouverIncident(incidentId);
         Prestataire prestataire = trouverPrestataire(prestataireId);
+
+        Double moyenne = surveillanceService.calculerMoyenne(prestataireId);
+        if (surveillanceService.estSousSurveillance(moyenne) && !confirmation)
+        {
+            throw new AffectationAConfirmerException(
+                    prestataireId,
+                    prestataire.getNom() + " est sous surveillance (moyenne de "
+                            + String.format(Locale.FRANCE, "%.1f", moyenne)
+                            + " sur ses " + SurveillancePrestataireService.TAILLE_FENETRE
+                            + " dernières évaluations). Confirmez l'affectation pour continuer.");
+        }
+
         incident.affecterPrestataire(prestataire);
     }
 

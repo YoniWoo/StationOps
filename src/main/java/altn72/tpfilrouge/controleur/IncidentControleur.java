@@ -4,6 +4,7 @@ import altn72.tpfilrouge.dto.DeclarationIncidentForm;
 import altn72.tpfilrouge.dto.EvaluationForm;
 import altn72.tpfilrouge.dto.IncidentDetailDto;
 import altn72.tpfilrouge.dto.ModificationIncidentForm;
+import altn72.tpfilrouge.exception.AffectationAConfirmerException;
 import altn72.tpfilrouge.modele.Incident;
 import altn72.tpfilrouge.securite.UtilisateurConnecte;
 import altn72.tpfilrouge.service.EquipementService;
@@ -124,10 +125,7 @@ public class IncidentControleur {
             @AuthenticationPrincipal UtilisateurConnecte utilisateur,
             Model model)
     {
-        model.addAttribute("utilisateurConnecte", utilisateur);
-        model.addAttribute("incident", incidentService.consulterDetail(id));
-        model.addAttribute("evaluation", evaluationService.trouverEvaluation(id).orElse(null));
-        model.addAttribute("prestataires", prestataireService.listerPrestataires());
+        remplirDetail(id, utilisateur, model);
 
         return "incident";
     }
@@ -174,11 +172,27 @@ public class IncidentControleur {
     // F7 : affecter ou reaffecter, reservé au responsable (voir ConfigurationSecurite)
     // redirect apres le POST pour que F5 rejoue pas l'action
     @PostMapping("/{id}/affectation")
+    // PS5 : si le service demande une confirmation on reaffiche le detail avec le message et
+    // un bouton "Confirmer" qui renvoie le meme formulaire avec confirmation=true
+    // le controleur decide rien, il affiche juste ce que le service a refusé
     public String affecterPrestataire(
             @PathVariable("id") Integer id,
-            @RequestParam("prestataireId") Integer prestataireId)
+            @RequestParam("prestataireId") Integer prestataireId,
+            @RequestParam(name = "confirmation", defaultValue = "false") boolean confirmation,
+            @AuthenticationPrincipal UtilisateurConnecte utilisateur,
+            Model model)
     {
-        incidentService.affecterPrestataire(id, prestataireId);
+        try
+        {
+            incidentService.affecterPrestataire(id, prestataireId, confirmation);
+        }
+        catch (AffectationAConfirmerException demande)
+        {
+            remplirDetail(id, utilisateur, model);
+            model.addAttribute("confirmationMessage", demande.getMessage());
+            model.addAttribute("confirmationPrestataireId", demande.getPrestataireId());
+            return "incident";
+        }
 
         return "redirect:/incidents/" + id;
     }
@@ -223,6 +237,15 @@ public class IncidentControleur {
                 formulaire.getCommentaire());
 
         return "redirect:/incidents/" + id;
+    }
+
+    // tout ce que la page detail affiche (F5), utilisé aussi quand on redemande une confirmation
+    private void remplirDetail(Integer id, UtilisateurConnecte utilisateur, Model model)
+    {
+        model.addAttribute("utilisateurConnecte", utilisateur);
+        model.addAttribute("incident", incidentService.consulterDetail(id));
+        model.addAttribute("evaluation", evaluationService.trouverEvaluation(id).orElse(null));
+        model.addAttribute("prestataires", prestataireService.listerPrestatairesPourAffectation());
     }
 
     private String afficherFormulaireEvaluation(
