@@ -871,6 +871,47 @@ IncidentWebTest verifie que le telechargement renvoie bien un fichier text/csv.
 
 L'export prend tout l'historique, il y a pas de filtre par periode ou par station.
 
+## Évolution séance finale
+
+Evolution « Prestataire sous surveillance » faite le 5 novembre (Tim).
+
+### Ce qui a été fait et ou dans le code
+
+Un prestataire est sous surveillance quand la moyenne de ses 5 dernieres evaluations est strictement en dessous de 3.
+Le statut est recalculé a chaque fois, rien est stocké en base (PS4).
+
+- `EvaluationRepository.trouverDernieresNotes` : requete JPQL qui renvoie les notes du prestataire triées par date d'evaluation puis id, du plus récent au plus ancien (PS1). Le nombre de notes est passé avec un `Pageable`.
+- `SurveillancePrestataireService` : le seul endroit avec le seuil `SEUIL_SURVEILLANCE = 3.0` et la fenetre `TAILLE_FENETRE = 5` (PS6). Il calcule la moyenne (null si moins de 5 notes, PS2) et dit si le prestataire est surveillé (strictement inferieur, PS3).
+- `IncidentService.affecterPrestataire(incidentId, prestataireId, confirmation)` : si le prestataire est surveillé et que confirmation vaut false, il leve `AffectationAConfirmerException` avant de toucher a l'incident, donc rien est enregistré (PS5, RG10). Un prestataire pas surveillé s'affecte comme avant.
+- `PrestataireService.listerPrestatairesPourAffectation` et `PrestataireChoixDto` : la liste deroulante sait quel prestataire est surveillé, la vue ajoute juste « (sous surveillance) » au nom.
+- `IncidentDetailDto.prestataireSousSurveillance` : la page detail affiche « sous surveillance » a coté du prestataire affecté.
+- `IncidentControleur` et `templates/incident.html` : bloc « Confirmation demandée » avec le message et le bouton « Confirmer l'affectation ».
+- `InitialisationDonneesDemo` : un 3e prestataire, Dupont Réseaux, avec les notes 3, 3, 3, 3, 3, 2 (exemple 3 de l'enoncé), il est donc sous surveillance dans la demo.
+
+La regle est seulement dans les services (PS7) : le controleur et la vue affichent ce que le service renvoie.
+
+### Choix de conception
+
+- Confirmation : au premier envoi du formulaire, le service refuse et le controleur reaffiche la page detail (statut 200, pas de redirection) avec un message qui contient « surveillance » et la moyenne. Le bouton « Confirmer l'affectation » renvoie le meme formulaire avec un champ caché confirmation=true. On a choisi ca plutot qu'une case a cocher pour que la confirmation soit demandée seulement quand c'est utile, et pas une page a part pour rester sur l'incident.
+- Raccourci pris : le controleur attrape `AffectationAConfirmerException` pour reafficher la page. C'est le seul try/catch des controleurs, il decide rien, il affiche juste le refus du service.
+- La fenetre est limitée dans la requete (Pageable) et aussi dans le calcul, comme ca le calcul se teste sans base avec les exemples de l'enoncé.
+- La moyenne est recalculée a chaque affichage, pour que la fenetre glisse toute seule apres chaque nouvelle evaluation.
+
+### Tests ajoutés
+
+- `SurveillancePrestataireServiceTest` (8 tests) : les 7 exemples de reference de l'enoncé, plus un test qui verifie que le service demande bien 5 notes au repository.
+- `EvaluationRepositoryTest` (3 tests, H2) : ordre du plus récent au plus ancien, a date egale c'est l'id le plus grand qui passe d'abord, seulement les notes du prestataire et pas plus que la fenetre.
+- `IncidentServiceTest` (+2) : affecter un prestataire surveillé sans confirmation est refusé et l'incident reste non affecté, avec confirmation c'est accepté.
+- `IncidentWebTest` (+5) : la liste affiche « (sous surveillance) » seulement pour Dupont, le premier envoi reaffiche la page avec « surveillance » et rien est enregistré, apres confirmation l'incident est affecté, un prestataire pas surveillé s'affecte sans confirmation, le detail affiche « sous surveillance ».
+
+Commande : `./mvnw test` (106 tests, aucun echec).
+
+### Limites connues
+
+- Dans la liste deroulante on fait une requete par prestataire pour calculer sa moyenne. Ca va pour quelques prestataires, avec beaucoup il faudrait une seule requete groupée.
+- La confirmation existe seulement dans les pages web : l'API a pas de route d'affectation.
+- Si deux evaluations ont exactement la meme date, c'est l'ordre de saisie (id) qui les departage, comme dit dans PS1.
+
 ## BILAN
 
 ### Tim HRDY
