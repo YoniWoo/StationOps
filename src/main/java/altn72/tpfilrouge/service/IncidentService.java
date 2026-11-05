@@ -88,9 +88,12 @@ public class IncidentService
         Duration duree = calculerDureeOuverture(incident);
 
         String prestataireNom = null;
+        boolean prestataireSousSurveillance = false;
         if (incident.getPrestataire() != null)
         {
             prestataireNom = incident.getPrestataire().getNom();
+            prestataireSousSurveillance = surveillanceService.estSousSurveillance(
+                    incident.getPrestataire().getId());
         }
 
         return new IncidentDetailDto(
@@ -104,6 +107,7 @@ public class IncidentService
                 incident.getEquipement().getLibelle(),
                 incident.getEquipement().getStation().getNom(),
                 prestataireNom,
+                prestataireSousSurveillance,
                 duree.toHours(),
                 duree.toMinutesPart(),
                 calculUrgenceService.calculer(incident));
