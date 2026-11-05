@@ -18,6 +18,8 @@ import java.time.LocalDateTime;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -43,12 +45,15 @@ class IncidentWebTest {
     private IncidentRepository incidentRepository;
     @Autowired
     private PrestataireRepository prestataireRepository;
+    @Autowired
+    private EvaluationRepository evaluationRepository;
 
     private MockMvc mockMvc;
     private UtilisateurConnecte agent;
     private UtilisateurConnecte responsable;
     private Equipement equipement;
     private Incident incident;
+    private Utilisateur compteAgent;
 
     @BeforeEach
     void preparer()
@@ -58,7 +63,7 @@ class IncidentWebTest {
                 .apply(springSecurity())
                 .build();
 
-        Utilisateur compteAgent = utilisateurRepository.save(new Utilisateur(
+        compteAgent = utilisateurRepository.save(new Utilisateur(
                 "agent-web@stationops.test", "hash-de-test",
                 "Agent", Profil.AGENT_TERRAIN));
         Utilisateur compteResponsable = utilisateurRepository.save(new Utilisateur(
@@ -260,5 +265,89 @@ class IncidentWebTest {
                 .andExpect(header().string("Content-Disposition",
                         containsString("historique-incidents.csv")))
                 .andExpect(content().contentTypeCompatibleWith("text/csv"));
+    }
+
+    // evolution seance finale : Dupont a 5 evaluations 2, 3, 3, 3, 3 donc moyenne 2,8 = sous surveillance
+    private Prestataire creerPrestataireSousSurveillance()
+    {
+        Prestataire dupont = prestataireRepository.save(
+                new Prestataire("Dupont Réseaux", "contact@dupont.test", null));
+        int[] notes = {2, 3, 3, 3, 3};
+        for (int note : notes)
+        {
+            Incident ancien = new Incident("Ancienne panne", equipement, compteAgent,
+                    LocalDateTime.now().minusDays(10));
+            ancien.affecterPrestataire(dupont);
+            ancien.resoudre(LocalDateTime.now().minusDays(9));
+            incidentRepository.save(ancien);
+            evaluationRepository.save(new Evaluation(ancien, note, null, LocalDateTime.now().minusDays(8)));
+        }
+        return dupont;
+    }
+
+    @Test
+    void laListeDAffectationSignaleLePrestataireSousSurveillance() throws Exception
+    {
+        creerPrestataireSousSurveillance();
+
+        mockMvc.perform(get("/incidents/{id}", incident.getId()).with(user(responsable)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Dupont Réseaux (sous surveillance)")))
+                .andExpect(content().string(not(containsString("Mobilité Maintenance (sous surveillance)"))));
+    }
+
+    @Test
+    void affecterUnPrestataireSurveilleDemandeUneConfirmationEtNEnregistreRien() throws Exception
+    {
+        Prestataire dupont = creerPrestataireSousSurveillance();
+
+        mockMvc.perform(post("/incidents/{id}/affectation", incident.getId())
+                        .param("prestataireId", dupont.getId().toString())
+                        .with(user(responsable)).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("incident"))
+                .andExpect(content().string(containsString("surveillance")))
+                .andExpect(content().string(containsString("Confirmer")));
+
+        assertEquals(StatutIncident.NON_AFFECTE, incidentRepository.findById(incident.getId()).get().getStatut());
+    }
+
+    @Test
+    void apresConfirmationLAffectationEstEnregistree() throws Exception
+    {
+        Prestataire dupont = creerPrestataireSousSurveillance();
+
+        mockMvc.perform(post("/incidents/{id}/affectation", incident.getId())
+                        .param("prestataireId", dupont.getId().toString())
+                        .param("confirmation", "true")
+                        .with(user(responsable)).with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/incidents/" + incident.getId()));
+
+        assertEquals(StatutIncident.AFFECTE, incidentRepository.findById(incident.getId()).get().getStatut());
+    }
+
+    @Test
+    void unPrestataireNonSurveilleSAffecteSansConfirmation() throws Exception
+    {
+        Prestataire mobilite = prestataireRepository.findAllByOrderByNomAsc().get(0);
+
+        mockMvc.perform(post("/incidents/{id}/affectation", incident.getId())
+                        .param("prestataireId", mobilite.getId().toString())
+                        .with(user(responsable)).with(csrf()))
+                .andExpect(status().is3xxRedirection());
+
+        assertEquals(StatutIncident.AFFECTE, incidentRepository.findById(incident.getId()).get().getStatut());
+    }
+
+    @Test
+    void leDetailDUnIncidentAffecteAUnPrestataireSurveilleLeSignale() throws Exception
+    {
+        Prestataire dupont = creerPrestataireSousSurveillance();
+        incident.affecterPrestataire(dupont);
+
+        mockMvc.perform(get("/incidents/{id}", incident.getId()).with(user(agent)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("sous surveillance")));
     }
 }
