@@ -79,9 +79,11 @@ Le profil `demo` crée les utilisateurs absents, puis initialise les
 données métier dans une transaction si les tables métier sont vides.
 Il ne supprime ni ne remplace les données existantes.
 
-Le jeu initial comprend trois stations, six équipements, deux prestataires,
-six incidents et une évaluation. Les incidents comprennent quatre
-non affectés, un affecté et un résolu.
+Le jeu initial comprend trois stations, six équipements, trois prestataires,
+douze incidents et sept évaluations. Les incidents comprennent quatre
+non affectés, un affecté et sept résolus. Six des incidents résolus sont
+évalués 3, 3, 3, 3, 3 puis 2 pour le prestataire Dupont Réseaux, qui est
+donc sous surveillance (voir « Évolution séance finale »).
 
 Les dates sont calculées relativement à l’heure du premier remplissage.
 Elles vieillissent ensuite normalement et ne sont pas recalculées
