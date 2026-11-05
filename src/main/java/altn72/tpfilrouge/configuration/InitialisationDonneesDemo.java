@@ -151,7 +151,46 @@ public class InitialisationDonneesDemo implements CommandLineRunner {
                 maintenant.minusDays(1)
         ));
 
+        creerPrestataireSousSurveillance(portique, declarant, maintenant);
+
         LOGGER.info("Données métier de démonstration créées");
+    }
+
+    // evolution seance finale : un 3e prestataire avec 6 notes 3, 3, 3, 3, 3, 2
+    // ses 5 dernieres font 2,8 donc il est sous surveillance (exemple 3 de l'enoncé)
+    // les incidents sont deja résolus donc l'etat du portique change pas
+    private void creerPrestataireSousSurveillance(
+            Equipement equipement,
+            Utilisateur declarant,
+            LocalDateTime maintenant) {
+
+        Prestataire dupont = prestataireRepository.save(
+                new Prestataire(
+                        "Dupont Réseaux",
+                        "contact@dupont-reseaux.test",
+                        "0100000002"
+                ));
+
+        int[] notes = {3, 3, 3, 3, 3, 2};
+        for (int i = 0; i < notes.length; i++) {
+            LocalDateTime ouverture = maintenant.minusDays(30 - i * 4L);
+
+            Incident incident = new Incident(
+                    "Lecteur de titres hors service",
+                    equipement,
+                    declarant,
+                    ouverture);
+            incident.affecterPrestataire(dupont);
+            incident.resoudre(ouverture.plusDays(1));
+            incidentRepository.save(incident);
+
+            evaluationRepository.save(new Evaluation(
+                    incident,
+                    notes[i],
+                    null,
+                    ouverture.plusDays(2)
+            ));
+        }
     }
 
     private boolean contientDesDonneesMetier() {
